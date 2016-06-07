@@ -5,6 +5,7 @@ It will pull metadata records from the API and convert the metadata into valid
 MODS records.
 
 Rough variables we have coming in from eSummary:
+ ```
     uid
     source (abbreviated journal title)
     authors ARRAY
@@ -34,3 +35,5 @@ Rough variables we have coming in from eSummary:
     
     from  PubmedArticleSet->PubmedArticle->PubmedData:
     ArticleIdList->ArticleId (can grab pmc id easily)
+
+```
