@@ -26,7 +26,7 @@ $keywords = $xml->PubmedArticle[0]->MedlineCitation->KeywordList->Keyword; // re
 // PubmedData chain has variables too, but mostly redundant and incomplete compared to the JSON variable
 $articleIds = $xml->PubmedArticle[0]->PubmedData->ArticleIdList->ArticleId; // returns array of IDs keyed by number, so not helpful in extrapolating what the ID is. BUT, can iterate this and check for PMC####### and NIHMS###### rows
 
-// Not all articles have it, but there are some with Mesh arrays
+// Not all articles have it, but there are some with Mesh arrays (Medical Subject Headings)
 $mesh = $xml->PubmedArticle[1]->MedlineCitation->MeshHeadingList; // returns array with objects for elements
 
 $abstractTwo = $xml->PubmedArticle[1]->MedlineCitation->Article->Abstract->AbstractText; // may return array to iterate for multiple paragraphs

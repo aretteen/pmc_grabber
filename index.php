@@ -6,8 +6,7 @@ $sleepVar = 10; // seconds to sleep, use with sleep();
 // the Grant # HD052120 and Affiliations: [Florida State University; FSU; 
 // Florida Center for Reading Research; FCRR]
 // The search will return a list of matching IDs; use those IDs to iterate 
-// through another API call to get the specific info per article, like PMCID 
-// for manuscript harvesting
+// through another API call to get the specific info per article
 
 $combined_search = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=(HD052120%5BGrant+Number%5D+AND+FCRR%5BAffiliation%5D)+OR+(HD052120%5BGrant+Number%5D+AND+(Florida+Center+for+Reading+Research%5BAffiliation%5D))+OR+(HD052120%5BGrant+Number%5D+AND+FSU%5BAffiliation%5D)+OR+(HD052120%5BGrant+Number%5D+AND+(Florida+State+University%5BAffiliation%5D))";
 $response_search = file_get_contents($combined_search) or die("Problem with eSearch");
@@ -34,6 +33,44 @@ $eSum = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&re
 $eSumResponse = file_get_contents($eSum) or die("Problem with eSummary");
 $json_eSum = json_decode($eSumResponse);
 
+sleep($sleepVar); // Sleep time between server calls
+
+// Construct eFetch request and store in XML variable
+// eFetch does not support returning JSON unfortunately
+$eFetch = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&id={$idList}";
+$eFetchXML = simplexml_load_file($eFetch) or die ("Problem with loading XML from eFetch");
+
+// IMPORTANT TO REALIZE AT THIS POINT
+// The JSON array is Keyed via the UID, but the XML array is NOT, it is queued up
+// in the order of IDs passed to it.
+// If you base BOTH retrieval systems on $i and $i++, they should all maintain horizontal consistency
+
+// Create an array from the CSV $idList and use that as the index value to sort through both datastreams at once
+$idListArray = explode(",",$idList);
+
+$recordsArray = array();
+for($index = 0; $index < (count($idListArray) - 1); $index++){
+    // This Loop will allow us to go through each record and pull out what we want
+    // and we can store each processed record as part of an array that gets 
+    // processed into MODS XML format.
+    
+    // Store in the array the PDF URL String?
+    
+    $uid = $json_eSum->result->uids[$index]; // Important Hook for rest of Variables in JSON Tree
+    
+    
+    $pmid = $eFetchXML->PubmedArticle[$index]->MedlineCitation->PMID->__toString();
+    print $index;
+    print "     ";
+    print $uid;
+    print "     ";
+    print $pmid;
+    print "<br>";
+    
+    $recordsArray[$uid] = array(); // pass processed stuff into here and it will be stored, keyed to the UID
+    
+}
+
 // At some point, add interaction between the script and a file db of IDs to
 // skip already-ingested objects
 
@@ -51,6 +88,11 @@ print "<h1>Results from eSearch</h1>";
 print "<h2>Combined Search</h2>";
 print "<pre>";
 print_r($json_response);
+print "</pre>";
+
+print "<h1>Results from eFetch XML Load</h1>";
+print "<pre>";
+print_r($eFetchXML);
 print "</pre>";
 //
 
