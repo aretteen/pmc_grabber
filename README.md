@@ -4,6 +4,46 @@ PMC_Grabber is a utility to be used with the NIH PubMed API interfaces.
 It will pull metadata records from the API and convert the metadata into valid
 MODS records.
 
+
+## MODS/Variable Alignment
+
+**titleinfo**
+title (full)
+sortTitle
+nonSort
+
+**name**
+namepart give
+namepart family
+affiliation
+
+for each author
+
+**abstract**
+Abstract
+
+**identifier**
+identifiers: doi, etc
+
+**relatedItem**
+Title of Journal
+Abbreviated Title of Journal?
+     Part
+         Pages
+         Volume
+         Issue
+ISSN
+ESSN
+
+**note**
+Keywords
+Publication Note
+Grant IDs?
+
+**subject**
+Mesh Subject Headings Descriptor and Qualifiers
+
+
 Rough variables we have coming in from eSummary:
  ```
     uid
