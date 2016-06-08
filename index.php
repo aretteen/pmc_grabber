@@ -64,20 +64,27 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
 
     // MedlineCitation Vars -- keep in mind that a loop structure has to be
     //added to iterate between multiple articles
-    $pmid = $eFetchXML->PubmedArticle[$index]->MedlineCitation->PMID->__toString();
+//    $pmid = $eFetchXML->PubmedArticle[$index]->MedlineCitation->PMID->__toString();
+    
+    // direct variables - don't need to be processed really
     $issn = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->Journal->ISSN->__toString();
     $volume = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->Journal->JournalIssue->Volume->__toString();
     $issue = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->Journal->JournalIssue->Issue->__toString();
     $journalTitle = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->Journal->Title->__toString();
     $journalAbrTitle = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->Journal->ISOAbbreviation->__toString();
     $articleTitle = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->ArticleTitle->__toString(); // This is a full title, inclusive of SubTitle. May have to explode out on Colon
+    
+    // array variables - returns an array, so we need to iterate and process
+    // what we want from it
+    
     $abstract = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->Abstract->AbstractText; // may return array to iterate for multiple paragraphs
     $authors = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->AuthorList; // will return Array of authors. Contains Affiliation info as well, which is an object
-    $affiliationSample = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->AuthorList->Author[0]->AffiliationInfo->Affiliation; // just a sample, testing double array within object chain, gonna have to build into the author loop
     $grants = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->GrantList; // returns an array with objects containing GrantID, Acronym, Agency, Country
-    $publicationType = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->PublicationTypeList->PublicationType; // may return an array? otherwise, just "JOURNAL ARTICLE"
     $keywords = $eFetchXML->PubmedArticle[$index]->MedlineCitation->KeywordList->Keyword; // returns an array which can be iterated for all keywords #woot
-
+//    $publicationType = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->PublicationTypeList->PublicationType; // may return an array? otherwise, just "JOURNAL ARTICLE"
+//    $affiliationSample = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->AuthorList->Author[0]->AffiliationInfo->Affiliation; // just a sample, testing double array within object chain, gonna have to build into the author loop
+       
+    
     // PubmedData chain has variables too, but mostly redundant and incomplete 
     // compared to the JSON variable
     $articleIds = $eFetchXML->PubmedArticle[$index]->PubmedData->ArticleIdList->ArticleId; // returns array of IDs keyed by number, so not helpful in extrapolating what the ID is. BUT, can iterate this and check for PMC####### and NIHMS###### rows
@@ -91,24 +98,116 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
 
     $uid = $json_eSum->result->uids[$index]; // Important Hook for rest of Variables in JSON Tree
     
+    // direct variables to be passed to Records Array
     $sortTitle = $json_eSum->result->$uid->sorttitle;
-    $volumeESum = $json_eSum->result->$uid->volume;
-    $issueESum = $json_eSum->result->$uid->issue;
     $pages = $json_eSum->result->$uid->pages;
-    $lang = $json_eSum->result->$uid->lang; // returns array
-    $issnESum = $json_eSum->result->$uid->issn;
     $essnESum = $json_eSum->result->$uid->essn;
-    $pubTypeESum = $json_eSum->result->$uid->pubtype; // returns an array
-    $articleIdESum = $json_eSum->result->$uid->articleids; // returns an array
-    $viewCount = $json_eSum->result->$uid->viewcount;
     $sortPubDate = $json_eSum->result->$uid->sortpubdate;
+    
+    // array variables, we need to iterate and process
+    $articleIdESum = $json_eSum->result->$uid->articleids; // returns an array
+    
+ //   $volumeESum = $json_eSum->result->$uid->volume; // Duplicate variable
+ //   $issueESum = $json_eSum->result->$uid->issue; // Duplicate variable, ideal world would check both streams and take the non-empty one if any are empty
+ //   $lang = $json_eSum->result->$uid->lang; // returns array
+ //   $issnESum = $json_eSum->result->$uid->issn; // Duplicate variable
+ //   $pubTypeESum = $json_eSum->result->$uid->pubtype; // returns an array
+ //   $viewCount = $json_eSum->result->$uid->viewcount; // We don't need, but its cool to have
+
 
 //
-// PREPARE GRABBED DATA FOR PASSING TO AUTHOR ARRAY
+// PREPARE GRABBED DATA FOR PASSING TO RECORDS ARRAY
 //
 
+    // Abstract Parse
+    // Whether text is contained in a single element or not, it will always return as an array.
+    // The following code expects $abstract to be presented as already parsed to the array level
+        unset($abstractString);
+        for($i = 0; $i < count($abstract); $i++){
+            // Add "new line" functionality? Otherwise multiple paragraphs wil just be combined
+            $abstractString .= $abstract[$i]->__toString() ." ";
+        } 
+
+    // Author Parsing
+    // Given an Author array with various sub-arrays. Goal is to prepare
+    // a new Author Array which will be processed upon XML generation
+    // This should return an Array full of Author Arrays following: FirstName, LastName, Fullname, Affiliation
+    // Check in with Bryan about normalization of Author metadata in order to have it match the named authority files by Annie
+        $authorArray = array();
+        for ($i = 0; $i < count($authors->Author); $i++){
+            $fname = $authors->Author[$i]->ForeName->__toString(); // Will return a string of Firstname + Middle Initial if given...
+            $lname = $authors->Author[$i]->LastName->__toString();
+            $fullname = $fname . " " . $lname;
+            $authAffil = $authors->Author[$i]->AffiliationInfo->Affiliation->__toString(); // Test to see how many sample records have >1 Affil, but this will at least capture the first one listed
+
+            $authorArray[$i] = array($fname,$lname,$fullname,$authAffil);
+        }
+
+    // Grant Number Parsing
+    // Presents an iterative object full of "Grant" arrays
+        unset($grantIDString);
+        for ($i = 0; $i < count($grants->Grant); $i++){
+            $grantIDString .= $grants->Grant[$i]->GrantID->__toString();
+            if($i != (count($grants->Grant) - 1)){
+                $grantIDString .= ", ";
+            }
+        }
     
+    // Keyword Parsing
+    // Presents a direct array ready for iteration
+        unset($keywordString);
+        for ($i = 0; $i < count($keywords); $i++){
+            $keywordString .= ucfirst($keywords[$i]->__toString());  // to comply with first character UC ... <3 Bryan
+            if($i != (count($keywords) -1)){
+                $keywordString .= ", ";
+            }
+        }
     
+    // ArticleID Parsing
+    // When sent here, var will be an array of object-arrays
+        $articleIdArray = array();
+        for ($i = 0; $i < (count($articleIdESum) - 1); $i++){
+            $idtype = $articleIdESum[$i]->idtype;
+            $value = $articleIdESum[$i]->value;
+
+            // Here is where we pick out which IDs we are interested in.
+            // Any idtype not here will not be captured going forward
+            if($idtype == "doi" || $idtype == "pmc" || $idtype == "mid" || $idtype == "rid" || $idtype == "eid" || $idtype == "pii"){
+              $articleIdArray[$idtype] = array($value);
+            }
+
+        }
+    
+    // Article Title Parsing
+    // Title variables are available from the XML stream and the JSON stream
+    // Goal is to parse what we have returned into 
+    // NonSort, sortTitle, startTitle, subTitle, fullTitle
+    // and store that in a Title Array to be parsed for MODS generation
+    // The following using the XML Stream "Article Title" as basis for everything else
+
+        // Generate nonsort var
+
+        $nonsorts = array("A","An","The");
+        $title_array = explode(" ", $articleTitle);
+        if (in_array($title_array[0], $nonsorts)){
+            $nonsort = $title_array[0];
+            $sortTitle = implode(" ", array_slice($title_array, 1)); // rejoins title array starting at first element
+        } else {
+            $nonsort = FALSE;
+            $sortTitle = $articleTitle;
+        }
+    
+        // Generate subTitle and startTitle from fullTitle string
+        $subTitleArray = explode(": ",$articleTitle);
+            // now $subTitleArray[0] will be startTitle & [1] will be subTitle
+            $startTitle = $subTitleArray[0];
+            $subTitle = $subTitleArray[1];
+    
+        // Combine it all into one master title array to be parsed for MODS Record
+        $parsedTitleArray = array($nonsort,$sortTitle,$startTitle,$subTitle,$articleTitle);
+    
+    // Mesh Subject Heading Parsing
+    // Put code here when developed
     
     
     print $index;

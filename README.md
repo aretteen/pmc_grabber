@@ -8,43 +8,66 @@ MODS records.
 ## MODS/Variable Alignment
 
 **titleinfo**
+
 title (full)
+
 sortTitle
+
 nonSort
 
 **name**
+
 namepart give
+
 namepart family
+
 affiliation
 
 for each author
 
 **abstract**
+
 Abstract
 
 **identifier**
+
 identifiers: doi, etc
 
 **relatedItem**
+
 Title of Journal
+
 Abbreviated Title of Journal?
+
      Part
+
          Pages
+
          Volume
+
          Issue
+
 ISSN
+
 ESSN
 
+
 **note**
+
 Keywords
+
 Publication Note
+
 Grant IDs?
 
+
 **subject**
+
 Mesh Subject Headings Descriptor and Qualifiers
 
 
 Rough variables we have coming in from eSummary:
+
  ```
     uid
     source (abbreviated journal title)
@@ -75,5 +98,35 @@ Rough variables we have coming in from eSummary:
     
     from  PubmedArticleSet->PubmedArticle->PubmedData:
     ArticleIdList->ArticleId (can grab pmc id easily)
+
+```
+
+#Tracked Variables
+
+These are the variables that are going to be passed through to the Records Array
+
+```
+Direct Variables:
+$issn
+$volume
+$issue
+$journalTitle
+$journalAbrTitle
+$articleTitle
+$sortTitle
+$pages
+$essnESum
+$articleIdESum
+$sortPubDate
+
+Processed Array Variables:
+$abstractString
+$authorArray  - array($fname,$lname,$fullname,$authAffil);
+$grantIDString
+$keywordString
+$articleIdArray[$idtype] = array($value);
+$parsedTitleArray = array($nonsort,$sortTitle,$startTitle,$subTitle,$articleTitle);
+
+
 
 ```
