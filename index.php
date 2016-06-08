@@ -209,6 +209,26 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
     // Mesh Subject Heading Parsing
     // Put code here when developed
     
+    //
+    // Build sub-array structures with the various metadata variables for 
+    // easier processing later, structured by the MODS top level elements
+        
+        $titleInfo;
+        $name;
+        $originInfo;
+        $abstractMODS;
+        $note;
+        $subject;
+        $relatedItem;
+        $identifierMODS;
+        $part; // ?
+        $extension; // ?
+        
+        // also keep in mind for another section the static MODS elements that
+        // will be the same across all records
+        // typeOfResource; genre; language...etc?
+        
+        
     
     print $index;
     print "     ";
