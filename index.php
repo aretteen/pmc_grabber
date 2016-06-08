@@ -58,8 +58,35 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
     
     $uid = $json_eSum->result->uids[$index]; // Important Hook for rest of Variables in JSON Tree
     
+//    
+// VARIABLES FROM EFETCH. coming from XML stream:
+//
+
+    // MedlineCitation Vars -- keep in mind that a loop structure has to be added to iterate between multiple articles
+    $pmid = $xml->PubmedArticle[0]->MedlineCitation->PMID->__toString();
+    $issn = $xml->PubmedArticle[0]->MedlineCitation->Article->Journal->ISSN->__toString();
+    $volume = $xml->PubmedArticle[0]->MedlineCitation->Article->Journal->JournalIssue->Volume->__toString();
+    $issue = $xml->PubmedArticle[0]->MedlineCitation->Article->Journal->JournalIssue->Issue->__toString();
+    $journalTitle = $xml->PubmedArticle[0]->MedlineCitation->Article->Journal->Title->__toString();
+    $journalAbrTitle = $xml->PubmedArticle[0]->MedlineCitation->Article->Journal->ISOAbbreviation->__toString();
+    $articleTitle = $xml->PubmedArticle[0]->MedlineCitation->Article->ArticleTitle->__toString(); // This is a full title, inclusive of SubTitle. May have to explode out on Colon
+    $abstract = $xml->PubmedArticle[0]->MedlineCitation->Article->Abstract->AbstractText; // may return array to iterate for multiple paragraphs
+    $authors = $xml->PubmedArticle[0]->MedlineCitation->Article->AuthorList; // will return Array of authors. Contains Affiliation info as well, which is an object
+    $affiliationSample = $xml->PubmedArticle[0]->MedlineCitation->Article->AuthorList->Author[0]->AffiliationInfo->Affiliation; // just a sample, testing double array within object chain, gonna have to build into the author loop
+    $grants = $xml->PubmedArticle[0]->MedlineCitation->Article->GrantList; // returns an array with objects containing GrantID, Acronym, Agency, Country
+    $publicationType = $xml->PubmedArticle[0]->MedlineCitation->Article->PublicationTypeList->PublicationType; // may return an array? otherwise, just "JOURNAL ARTICLE"
+    $keywords = $xml->PubmedArticle[0]->MedlineCitation->KeywordList->Keyword; // returns an array which can be iterated for all keywords #woot
+
+// PubmedData chain has variables too, but mostly redundant and incomplete compared to the JSON variable
+$articleIds = $xml->PubmedArticle[0]->PubmedData->ArticleIdList->ArticleId; // returns array of IDs keyed by number, so not helpful in extrapolating what the ID is. BUT, can iterate this and check for PMC####### and NIHMS###### rows
+
+// Not all articles have it, but there are some with Mesh arrays (Medical Subject Headings)
+$mesh = $xml->PubmedArticle[1]->MedlineCitation->MeshHeadingList; // returns array with objects for elements
     
     $pmid = $eFetchXML->PubmedArticle[$index]->MedlineCitation->PMID->__toString();
+    
+    
+    
     print $index;
     print "     ";
     print $uid;
