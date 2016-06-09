@@ -143,7 +143,7 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
             $x = 0;
             $authAffil = $authors->Author[$i]->AffiliationInfo->Affiliation."";
 
-            $authorArray[$i] = array($fname,$lname,$fullname,$authAffil);
+            $authorArray[$i] = array("Firstname"=>$fname,"Lastname"=>$lname,"Fullname"=>$fullname,"Affiliation"=>$authAffil);
         }
 
     // Grant Number Parsing
@@ -231,13 +231,13 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
         }
     
         // Generate subTitle and startTitle from fullTitle string
-        $subTitleArray = explode(": ",$articleTitle);
+        $subTitleArray = explode(": ",$sortTitle);
             // now $subTitleArray[0] will be startTitle & [1] will be subTitle
             $startTitle = $subTitleArray[0];
             $subTitle = $subTitleArray[1];
     
         // Combine it all into one master title array to be parsed for MODS Record
-        $parsedTitleArray = array($nonsort,$sortTitle,$startTitle,$subTitle,$articleTitle);
+        $parsedTitleArray = array("nonsort"=>$nonsort,"sort"=>$sortTitle,"start"=>$startTitle,"subtitle"=>$subTitle,"fulltitle"=>$articleTitle);
     
     // Mesh Subject Heading Parsing
     // Put code here when developed
@@ -250,11 +250,11 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
         
         $titleInfoMODS = $parsedTitleArray; // See above, all process done already. Renaming
         $nameMODS = $authorArray; // See above, all process done already. Renaming
-        $originInfoMODS = array($sortPubDate,$journalTitle); // fills dateIssued and Publisher (?) role
+        $originInfoMODS = array("date"=>$sortPubDate,"journal"=>$journalTitle); // fills dateIssued and Publisher (?) role
         $abstractMODS = $abstractString; // See above, all process done. Renaming
-        $noteMODS = array($keywordString,$grantIDString); // for Grant, set displayLabel="Grants"
+        $noteMODS = array("keywords"=>$keywordString,"grants"=>$grantIDString); // for Grant, set displayLabel="Grants"
         $subjectMODS = array();; // use this when the Mesh subject array code is finished
-        $relatedItemMODS = array($journalTitle,$volume,$issue,$pages,$issn,$essnESum);
+        $relatedItemMODS = array("journal"=>$journalTitle,"volume"=>$volume,"issue"=>$issue,"pages"=>$pages,"issn"=>$issn,"essn"=>$essnESum);
         $identifierMODS = $articleIdArray; // See above, all process done. Renaming
         
         // also keep in mind for another section the static MODS elements that
@@ -263,11 +263,11 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
         
         $typeOfResourceMODS = "text";
         $genreMODS = "text";
-        $languageMODS = array("English","eng");
+        $languageMODS = array("text"=>"English","code"=>"eng");
         $physicalDescriptionMODS = array("computer","online resource","1 online resource","born digital","application/pdf");
-        $extensionMODS = array("FSU","FSU");
+        $extensionMODS = array("owningInstitution"=>"FSU","submittingInstitution"=>"FSU");
             $date = date("Y/m/d");
-        $recordInfoMODS = array($date,"rda");
+        $recordInfoMODS = array("dateCreated"=>$date,"descriptionStandard"=>"rda");
       
    // pass processed stuff into here and it will be stored, keyed to the UID
     $recordsArray[$uid] = array(
@@ -288,7 +288,35 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
     
 }
 
-
+//
+// GENERATE MODS RECORD
+// Starting with a Single UID, but build a loop for the rest
+//
+      $sampleRecord = $recordsArray['26877787'];
+      
+            $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mods="http://www.loc.gov/mods/v3" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:flvc="info:flvc/manifest/v1" xsi:schemaLocation="http://www.loc.gov/standards/mods/v3/mods-3-4.xsd" version="3.4"></mods>');
+      
+      // Build Title
+      
+      $xml->addChild('titleInfo');
+      $xml->titleInfo->addAttribute('lang','eng');
+      $xml->titleInfo->addChild('title', htmlspecialchars($sampleRecord['titleInfo']['start']));
+      if ($sampleRecord['titleInfo']['nonsort']){ $xml->titleInfo->addChild('nonSort', htmlspecialchars($sampleRecord['titleInfo']['nonsort'])); }
+      if ($sampleRecord['titleInfo']['subtitle']){ $xml->titleInfo->addChild('subTitle', htmlspecialchars($sampleRecord['titleInfo']['subTitle'])); }
+      
+      // Build Name
+      for($i = 0; $i < count($sampleRecord['name']); $i++){
+          $xml->addChild('name');
+          $xml->name->addAttribute('type', 'personal');
+          $xml->name->addAttribute('authority','local');
+          
+          $xml->name->addChild('namePart'); /////
+          $sampleRecord['name'][$i];
+      }
+      
+      
+      
+     
 
 // At some point, add interaction between the script and a file db of IDs to
 // skip already-ingested objects
