@@ -128,5 +128,12 @@ $articleIdArray[$idtype] = array($value);
 $parsedTitleArray = array($nonsort,$sortTitle,$startTitle,$subTitle,$articleTitle);
 
 
+$originInfo - array(dateIssued,publisher)
 
+NOTE: 
+<location displayLabel="Fulltext">
+<url>http://dx.doi.org/DOI</url>
+</location>
+
+can be used to display a clickable link to the DOI on record!!
 ```

@@ -18,7 +18,7 @@ $journalAbrTitle = $xml->PubmedArticle[0]->MedlineCitation->Article->Journal->IS
 $articleTitle = $xml->PubmedArticle[0]->MedlineCitation->Article->ArticleTitle->__toString(); // This is a full title, inclusive of SubTitle. May have to explode out on Colon
 $abstract = $xml->PubmedArticle[0]->MedlineCitation->Article->Abstract->AbstractText; // may return array to iterate for multiple paragraphs
 $authors = $xml->PubmedArticle[0]->MedlineCitation->Article->AuthorList; // will return Array of authors. Contains Affiliation info as well, which is an object
-$affiliationSample = $xml->PubmedArticle[0]->MedlineCitation->Article->AuthorList->Author[0]->AffiliationInfo->Affiliation; // just a sample, testing double array within object chain, gonna have to build into the author loop
+$affiliationSample = $xml->PubmedArticle[0]->MedlineCitation->Article->AuthorList->Author[0]->AffiliationInfo->Affiliation->__toString(); // just a sample, testing double array within object chain, gonna have to build into the author loop
 $grants = $xml->PubmedArticle[0]->MedlineCitation->Article->GrantList; // returns an array with objects containing GrantID, Acronym, Agency, Country
 $publicationType = $xml->PubmedArticle[0]->MedlineCitation->Article->PublicationTypeList->PublicationType; // may return an array? otherwise, just "JOURNAL ARTICLE"
 $keywords = $xml->PubmedArticle[0]->MedlineCitation->KeywordList->Keyword; // returns an array which can be iterated for all keywords #woot
@@ -276,6 +276,7 @@ print "<br>";
 print "<br>";
 print "Affiliation for Author 1: ";
 print $affiliationSample;
+print " " . gettype($affiliationSample);
 print "<br>";
 print "<br>";
 print "Parsed Author Array: ";

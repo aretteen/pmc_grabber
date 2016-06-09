@@ -1,5 +1,6 @@
 <?php
 ini_set('max_execution_time', 300); // 5 minute execution time on script
+date_default_timezone_set('America/New_York');
 $sleepVar = 10; // seconds to sleep, use with sleep();
 
 // Construct a valid search that brings back results associated with
@@ -79,6 +80,7 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
     
     $abstract = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->Abstract->AbstractText; // may return array to iterate for multiple paragraphs
     $authors = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->AuthorList; // will return Array of authors. Contains Affiliation info as well, which is an object
+ 
     $grants = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->GrantList; // returns an array with objects containing GrantID, Acronym, Agency, Country
     $keywords = $eFetchXML->PubmedArticle[$index]->MedlineCitation->KeywordList->Keyword; // returns an array which can be iterated for all keywords #woot
 //    $publicationType = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->PublicationTypeList->PublicationType; // may return an array? otherwise, just "JOURNAL ARTICLE"
@@ -138,7 +140,8 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
             $fname = $authors->Author[$i]->ForeName->__toString(); // Will return a string of Firstname + Middle Initial if given...
             $lname = $authors->Author[$i]->LastName->__toString();
             $fullname = $fname . " " . $lname;
-            $authAffil = $authors->Author[$i]->AffiliationInfo->Affiliation->__toString(); // Test to see how many sample records have >1 Affil, but this will at least capture the first one listed
+            $x = 0;
+            $authAffil = $authors->Author[$i]->AffiliationInfo->Affiliation."";
 
             $authorArray[$i] = array($fname,$lname,$fullname,$authAffil);
         }
@@ -166,16 +169,46 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
     // ArticleID Parsing
     // When sent here, var will be an array of object-arrays
         $articleIdArray = array();
-        for ($i = 0; $i < (count($articleIdESum) - 1); $i++){
+        for ($i = 0; $i < count($articleIdESum); $i++){
             $idtype = $articleIdESum[$i]->idtype;
             $value = $articleIdESum[$i]->value;
 
             // Here is where we pick out which IDs we are interested in.
             // Any idtype not here will not be captured going forward
-            if($idtype == "doi" || $idtype == "pmc" || $idtype == "mid" || $idtype == "rid" || $idtype == "eid" || $idtype == "pii"){
-              $articleIdArray[$idtype] = array($value);
+            if(
+                    $idtype == "doi" || 
+                    $idtype == "pmc" || 
+                    $idtype == "mid" || 
+                    $idtype == "rid" || 
+                    $idtype == "eid" || 
+                    $idtype == "pii" ||
+                    $idtype == "pmcid"){
+              $articleIdArray[$idtype] = $value;
             }
-
+            
+            // Generate IID value from the PubMed UID
+            $iid = "FSU_pmch_{$uid}";
+            $articleIdArray["iid"] = $iid;
+            
+            // Generate PDF link & Check for Embargo & Flag Embargo Status
+            // Kind of out of place for process, but this is where it made most
+            // sense to me to put this.
+            // I WILL HAVE TO ADD SOMEWHERE IN THE DB PROCESS TO CHECK IF PMCID
+            // EVEN EXISTS IN THE AUTHOR RECORD
+           if($idtype == "pmcid"){
+                // When a record has a PMCID, it means there is a manuscript.
+                // The manuscript can be emargoed or not. If embargoed, we need to flag that.
+                $needle = "embargo-date";
+                if(strpos($value,$needle)){
+                    // if this returns true, then there is an embargo date
+                    $articleIdArray["embargo"] = TRUE;
+                    // Can add functionality to strip out the embargo date here
+                    $articleIdArray["pdf"] = "embargoed";
+                } else {
+                    $articleIdArray["embargo"] = FALSE;
+                    $articleIdArray["pdf"] = "http://www.ncbi.nlm.nih.gov/pmc/articles/{$articleIdArray["pmc"]}/pdf/{$articleIdArray["mid"]}.pdf";
+                }
+            }
         }
     
     // Article Title Parsing
@@ -212,34 +245,50 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
     //
     // Build sub-array structures with the various metadata variables for 
     // easier processing later, structured by the MODS top level elements
+    // Sometimes I just reassign a variable to a new name, just for cognitive
+    // ease in understanding this script.
         
-        $titleInfo;
-        $name;
-        $originInfo;
-        $abstractMODS;
-        $note;
-        $subject;
-        $relatedItem;
-        $identifierMODS;
-        $part; // ?
-        $extension; // ?
+        $titleInfoMODS = $parsedTitleArray; // See above, all process done already. Renaming
+        $nameMODS = $authorArray; // See above, all process done already. Renaming
+        $originInfoMODS = array($sortPubDate,$journalTitle); // fills dateIssued and Publisher (?) role
+        $abstractMODS = $abstractString; // See above, all process done. Renaming
+        $noteMODS = array($keywordString,$grantIDString); // for Grant, set displayLabel="Grants"
+        $subjectMODS = array();; // use this when the Mesh subject array code is finished
+        $relatedItemMODS = array($journalTitle,$volume,$issue,$pages,$issn,$essnESum);
+        $identifierMODS = $articleIdArray; // See above, all process done. Renaming
         
         // also keep in mind for another section the static MODS elements that
         // will be the same across all records
         // typeOfResource; genre; language...etc?
         
-        
-    
-    print $index;
-    print "     ";
-    print $uid;
-    print "     ";
-    print $pmid;
-    print "<br>";
-    
-    $recordsArray[$uid] = array(); // pass processed stuff into here and it will be stored, keyed to the UID
+        $typeOfResourceMODS = "text";
+        $genreMODS = "text";
+        $languageMODS = array("English","eng");
+        $physicalDescriptionMODS = array("computer","online resource","1 online resource","born digital","application/pdf");
+        $extensionMODS = array("FSU","FSU");
+            $date = date("Y/m/d");
+        $recordInfoMODS = array($date,"rda");
+      
+   // pass processed stuff into here and it will be stored, keyed to the UID
+    $recordsArray[$uid] = array(
+        "titleInfo" => $titleInfoMODS,
+        "name" => $nameMODS,
+        "typeOfResource" => $typeOfResourceMODS,
+        "genre" => $genreMODS,
+        "originInfo" => $originInfoMODS,
+        "language" => $languageMODS,
+        "physicalDescription" => $physicalDescriptionMODS,
+        "abstract" => $abstractMODS,
+        "note" => $noteMODS,
+        "subject" => $subjectMODS,
+        "relatedItem" => $relatedItemMODS,
+        "identifier" => $identifierMODS,
+        "recordInfo" => $recordInfoMODS,
+        "extension" => $extensionMODS); 
     
 }
+
+
 
 // At some point, add interaction between the script and a file db of IDs to
 // skip already-ingested objects
@@ -247,6 +296,12 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
 //
 // DEV TEST
 //
+print "<pre>";
+print_r($recordsArray);
+print "</pre>";
+
+print "<hr>";
+
 print "<h1>Results from eSummary</h1>";
 print "<pre>";
 print_r($json_eSum);
@@ -264,8 +319,6 @@ print "<h1>Results from eFetch XML Load</h1>";
 print "<pre>";
 print_r($eFetchXML);
 print "</pre>";
-//
-
 /* DEV GRAVEYARD
  *****file get contents timeout****
  * $ctx = stream_context_create(array(
@@ -290,6 +343,26 @@ $search_FCRR = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pub
 $search_FCRR_long = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=((HD052120%5BGrant+Number%5D)%20AND%20Florida+Center+for+Reading+Research%5BAffiliation%5D)"; // Grant Number & "Florida Center for Reading Research"
 $search_FSU_long= "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=((HD052120%5BGrant%20Number%5D)%20AND%20Florida%20State%20University%5BAffiliation%5D)"; // Grant Number & "Florida State University"
 $search_FSU = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=((HD052120%5BGrant+Number%5D)%20AND%20Florida+State+University%5BAffiliation%5D)"; // Grant Number & "FSU"
+
+
+*****************
+print "<h1>Results from eSummary</h1>";
+print "<pre>";
+print_r($json_eSum);
+print "</pre>";
+
+
+print "<h1>Results from eSearch</h1>";
+
+print "<h2>Combined Search</h2>";
+print "<pre>";
+print_r($json_response);
+print "</pre>";
+
+print "<h1>Results from eFetch XML Load</h1>";
+print "<pre>";
+print_r($eFetchXML);
+print "</pre>";
 
  * 
  * 
