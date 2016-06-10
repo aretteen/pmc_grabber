@@ -150,11 +150,29 @@ for ($i = 0; $i < (count($articleIdESum) - 1); $i++){
     // Combine it all into one master title array to be parsed for MODS Record
     $parsedTitleArray = array($nonsort,$sortTitle,$startTitle,$subTitle,$articleTitle);
     
-// Mesh Subject Terms Parsing
-// Some records will have an object array of Subject Terms
-// for use in <subject authority="mesh"><topic></topic></subject>
+    // Mesh Subject Terms Parsing
+    // Some records will have an object array of Subject Terms
+    // for use in <subject authority="mesh"><topic></topic></subject>
+    // This will parse the object-array of Mesh subject terms into
+    // Descriptor -- Qualifier for individul <topic> elements
+    $meshArray = array();
+    for ($i = 0; $i < count($mesh->MeshHeading);$i++){
+        
+       $descriptor = $mesh->MeshHeading[$i]->DescriptorName.""; // seems to always to be just one per
+       
+       if($mesh->MeshHeading[$i]->QualifierName){ // can be a single qualifier or a set of qualifers for the descriptor
+           for($xi=0;$xi<count($mesh->MeshHeading[$i]->QualifierName); $xi++){
+               $meshSubArray[$xi] = $descriptor . " -- " . $mesh->MeshHeading[$i]->QualifierName[$xi]; 
+               $meshArray[$i] = implode("||,||",$meshSubArray);
+           }
+        } else {
+            // Only descriptorname, so pass it on
+            $meshArray[$i] = $descriptor;
+        }
+        
+    }
+    
 
-// Put this on hold until talk with Matt M about how this will be ingested
     
 
 // Print out results to test variable chains
@@ -311,6 +329,8 @@ print "<hr>";
 print "<h3>Mesh Headings</h3>";
 print "<pre>";
 print_r($mesh);
+print"<br><br><br><br>";
+print_r($meshArray);
 print "</pre>";
 
 print "<h3>verify results here</h3>";

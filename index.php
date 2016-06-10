@@ -283,8 +283,32 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
         }
         
         
-    // Mesh Subject Heading Parsing
-    // Put code here when developed
+    // Mesh Subject Terms Parsing
+    // Some records will have an object array of Subject Terms
+    // for use in <subject authority="mesh"><topic></topic></subject>
+    // This will parse the object-array of Mesh subject terms into
+    // Descriptor -- Qualifier for individul <topic> elements
+    if($mesh){
+        $meshArray = array();
+        
+        for ($i = 0; $i < count($mesh->MeshHeading);$i++){
+           $meshSubArray = array();
+           $descriptor = $mesh->MeshHeading[$i]->DescriptorName.""; // seems to always to be just one per
+
+           if($mesh->MeshHeading[$i]->QualifierName){ // can be a single qualifier or a set of qualifers for the descriptor
+               for($xi=0;$xi<count($mesh->MeshHeading[$i]->QualifierName); $xi++){
+                   $meshSubArray[$xi] = $descriptor . "--" . $mesh->MeshHeading[$i]->QualifierName[$xi].""; 
+                   $meshArray[$i] = implode("||,||",$meshSubArray);
+               }
+            } else {
+                // Only descriptorname, so pass it on
+                $meshArray[$i] = $descriptor;
+            }
+
+        }
+    } else{
+        $meshArray = FALSE;
+    }
     
     //
     // Build sub-array structures with the various metadata variables for 
@@ -297,7 +321,7 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
         $originInfoMODS = array("date"=>$pubDateClean,"journal"=>$journalTitle); // fills dateIssued and Publisher (?) role
         $abstractMODS = $abstractString; // See above, all process done. Renaming
         $noteMODS = array("keywords"=>$keywordString,"grants"=>$grantIDString); // for Grant, set displayLabel="Grants"
-        $subjectMODS = array();; // use this when the Mesh subject array code is finished
+        $subjectMODS = $meshArray; // Will either be an array of subject terms, or false
         $relatedItemMODS = array("journal"=>$journalTitle,"volume"=>$volume,"issue"=>$issue,"pages"=>$pages,"issn"=>$issn,"essn"=>$essnESum);
         $identifierMODS = $articleIdArray; // See above, all process done. Renaming
         
@@ -336,7 +360,7 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
 // GENERATE MODS RECORD
 // Starting with a Single UID, but build a loop for the rest
 //
-$sampleRecord = $recordsArray['26877787'];
+$sampleRecord = $recordsArray['22082216'];
      
 $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mods="http://www.loc.gov/mods/v3" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:flvc="info:flvc/manifest/v1" xsi:schemaLocation="http://www.loc.gov/standards/mods/v3/mods-3-4.xsd" version="3.4"></mods>');
       
@@ -455,6 +479,35 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
             }   
         }
       
+      // Build Subject
+        $subjectNeedle = "||,||";
+        if($sampleRecord['subject']){
+            for($i=0;$i<count($sampleRecord['subject']);$i++){
+                
+                if( strpos($sampleRecord['subject'][$i],$subjectNeedle) ){
+                    // If true, there are multiple subject terms on one line here
+                    $termsArray = explode("||,||",$sampleRecord['subject'][$i]);
+                    
+                    for($subIndex=0;$subIndex<count($termsArray);$subIndex++){
+                        $subXML = $xml->addChild('subject');
+                        $subXML->addAttribute('authority','mesh');
+                        $subXML->addChild('topic',  htmlspecialchars($termsArray[$subIndex]));
+                    }
+                    
+                    
+                } else {
+                    // If above is not true, then there is only term per line
+                    
+                    $subXML = $xml->addChild('subject');
+                    $subXML->addAttribute('authority','mesh');
+                    $subXML->addChild('topic',  htmlspecialchars($sampleRecord['subject'][$i]));
+
+                }
+                
+                
+            }
+        }
+        
       // Build Notes
         
         if($sampleRecord['note']['keywords']){
