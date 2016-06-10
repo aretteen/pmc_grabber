@@ -310,7 +310,14 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
           $xml->name->addAttribute('type', 'personal');
           $xml->name->addAttribute('authority','local');
           
-          $xml->name->addChild('namePart'); /////
+          $xml->name->addChild('namePart',htmlspecialchars($sampleRecord['name'][$i]['Firstname']))->addAttribute('type','given');
+          
+          $xml->name->addChild('namePart',htmlspecialchars($sampleRecord['name'][$i]['Lastname']))->addAttribute('type','family');
+          
+          $xml->name->addChild('affiliation',htmlspecialchars($sampleRecord['name'][$i]['Affiliation']));
+          
+          $xml->name->addChild('role');
+          $xml->name->role->addChild('roleTerm','author');//// PICK UP HERE
           $sampleRecord['name'][$i];
       }
       
