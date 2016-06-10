@@ -238,7 +238,51 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
     
         // Combine it all into one master title array to be parsed for MODS Record
         $parsedTitleArray = array("nonsort"=>$nonsort,"sort"=>$sortTitle,"start"=>$startTitle,"subtitle"=>$subTitle,"fulltitle"=>$articleTitle);
-    
+           
+        
+        //
+        // Parse the sortPubDate to throw away the timestamp
+        // sortPubDate format is consistently: YYYY/MM/DD 00:00, and needs to
+        //                                      become YYYY-MM-DD
+        
+        $pubDateDirty = substr($sortPubDate,0,10);
+        $stringA = explode("/",$pubDateDirty);
+        $pubDateClean = implode("-",$stringA);
+        //
+        // Parse the page ranges for passing to MODS easily
+        // Case: "217-59" needs to be understood as "217" and "259" for <start>217</start><end>259</end>
+        // other examples: xxx-x, xxxx-xxx, xxxx-xx, xxxx-x
+        
+        $pagesArray = explode("-",$pages);
+
+        if( strlen($pagesArray[0]) == 3 && strlen($pagesArray[1]) == 2  ){
+            $append = substr($pagesArray[0],0,1);
+            $pagesCorrect = $append . $pagesArray[1];
+
+            $pages = $pagesArray[0] . "-" . $pagesCorrect;
+        } else if (strlen($pagesArray[0]) == 3 && strlen($pagesArray[1]) == 1){
+            $append = substr($pagesArray[0],0,2);
+            $pagesCorrect = $append . $pagesArray[1];
+
+            $pages = $pagesArray[0] . "-" . $pagesCorrect;
+        } else if (strlen($pagesArray[0]) == 4 && strlen($pagesArray[1]) == 3){
+            $append = substr($pagesArray[0],0,1);
+            $pagesCorrect = $append . $pagesArray[1];
+
+            $pages = $pagesArray[0] . "-" . $pagesCorrect;
+        } else if (strlen($pagesArray[0]) == 4 && strlen($pagesArray[1]) == 2){
+            $append = substr($pagesArray[0],0,2);
+            $pagesCorrect = $append . $pagesArray[1];
+
+            $pages = $pagesArray[0] . "-" . $pagesCorrect;
+        } else if (strlen($pagesArray[0]) == 4 && strlen($pagesArray[1]) == 1){
+            $append = substr($pagesArray[0],0,3);
+            $pagesCorrect = $append . $pagesArray[1];
+
+            $pages = $pagesArray[0] . "-" . $pagesCorrect;
+        }
+        
+        
     // Mesh Subject Heading Parsing
     // Put code here when developed
     
@@ -250,7 +294,7 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
         
         $titleInfoMODS = $parsedTitleArray; // See above, all process done already. Renaming
         $nameMODS = $authorArray; // See above, all process done already. Renaming
-        $originInfoMODS = array("date"=>$sortPubDate,"journal"=>$journalTitle); // fills dateIssued and Publisher (?) role
+        $originInfoMODS = array("date"=>$pubDateClean,"journal"=>$journalTitle); // fills dateIssued and Publisher (?) role
         $abstractMODS = $abstractString; // See above, all process done. Renaming
         $noteMODS = array("keywords"=>$keywordString,"grants"=>$grantIDString); // for Grant, set displayLabel="Grants"
         $subjectMODS = array();; // use this when the Mesh subject array code is finished
@@ -273,18 +317,18 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
     $recordsArray[$uid] = array(
         "titleInfo" => $titleInfoMODS,
         "name" => $nameMODS,
-        "typeOfResource" => $typeOfResourceMODS,
-        "genre" => $genreMODS,
+  //      "typeOfResource" => $typeOfResourceMODS,
+  //      "genre" => $genreMODS,
         "originInfo" => $originInfoMODS,
-        "language" => $languageMODS,
-        "physicalDescription" => $physicalDescriptionMODS,
+  //      "language" => $languageMODS,
+  //      "physicalDescription" => $physicalDescriptionMODS,
         "abstract" => $abstractMODS,
         "note" => $noteMODS,
         "subject" => $subjectMODS,
         "relatedItem" => $relatedItemMODS,
         "identifier" => $identifierMODS,
-        "recordInfo" => $recordInfoMODS,
-        "extension" => $extensionMODS); 
+        "recordInfo" => $recordInfoMODS);
+  //      "extension" => $extensionMODS); 
     
 }
 
@@ -292,9 +336,9 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
 // GENERATE MODS RECORD
 // Starting with a Single UID, but build a loop for the rest
 //
-      $sampleRecord = $recordsArray['26877787'];
-      
-            $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mods="http://www.loc.gov/mods/v3" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:flvc="info:flvc/manifest/v1" xsi:schemaLocation="http://www.loc.gov/standards/mods/v3/mods-3-4.xsd" version="3.4"></mods>');
+$sampleRecord = $recordsArray['26877787'];
+     
+$xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mods="http://www.loc.gov/mods/v3" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:flvc="info:flvc/manifest/v1" xsi:schemaLocation="http://www.loc.gov/standards/mods/v3/mods-3-4.xsd" version="3.4"></mods>');
       
       // Build Title
       
@@ -305,25 +349,165 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
       if ($sampleRecord['titleInfo']['subtitle']){ $xml->titleInfo->addChild('subTitle', htmlspecialchars($sampleRecord['titleInfo']['subTitle'])); }
       
       // Build Name
-      for($i = 0; $i < count($sampleRecord['name']); $i++){
-          $xml->addChild('name');
-          $xml->name->addAttribute('type', 'personal');
-          $xml->name->addAttribute('authority','local');
+      foreach($sampleRecord['name'] as $value){
+      // for($i = 0; $i < count($sampleRecord['name']); $i++){
+          $a = $xml->addChild('name');
+          $a->addAttribute('type', 'personal');
+          $a->addAttribute('authority','local');
           
-          $xml->name->addChild('namePart',htmlspecialchars($sampleRecord['name'][$i]['Firstname']))->addAttribute('type','given');
+          $a->addChild('namePart',htmlspecialchars($value['Firstname']))->addAttribute('type','given');
           
-          $xml->name->addChild('namePart',htmlspecialchars($sampleRecord['name'][$i]['Lastname']))->addAttribute('type','family');
+          $a->addChild('namePart',htmlspecialchars($value['Lastname']))->addAttribute('type','family');
           
-          $xml->name->addChild('affiliation',htmlspecialchars($sampleRecord['name'][$i]['Affiliation']));
+          $a->addChild('affiliation',htmlspecialchars($value['Affiliation']));
           
-          $xml->name->addChild('role');
-          $xml->name->role->addChild('roleTerm','author');//// PICK UP HERE
-          $sampleRecord['name'][$i];
+          $a->addChild('role');
+          $r1 = $a->role->addChild('roleTerm', 'author'); 
+          $r1->addAttribute('authority', 'rda');
+          $r1->addAttribute('type', 'text');
+          $r2 = $a->role->addChild('roleTerm', 'aut'); 
+          $r2->addAttribute('authority', 'marcrelator');
+          $r2->addAttribute('type', 'code');      
       }
       
+      // Build originInfo
       
+      $xml->addChild('originInfo');
+      $xml->originInfo->addChild('dateIssued',  htmlspecialchars($sampleRecord['originInfo']['date']));
+      $xml->originInfo->dateIssued->addAttribute('encoding','w3cdtf');
+      $xml->originInfo->dateIssued->addAttribute('keyDate','yes');
       
+      // Build abstract, if field is not empty
+      
+      if($sampleRecord['abstract']){ 
+          $xml->addChild('abstract',  htmlspecialchars($sampleRecord['abstract']));
+          }
+         
+      // Build identifiers
+      
+        // IID
+        $xml->addChild('identifier',$sampleRecord['identifier']['iid'])->addAttribute('type','IID');
+      
+        // DOI
+        if($sampleRecord['identifier']['doi']){
+            $xml->addChild('identifier',$sampleRecord['identifier']['doi'])->addAttribute('type','DOI');
+        }
+        
+        // OMC
+        if($sampleRecord['identifier']['pmc']){
+            $xml->addChild('identifier',$sampleRecord['identifier']['pmc'])->addAttribute('type','PMCID');
+        }
+      
+        // RID
+        if($sampleRecord['identifier']['rid']){
+            $xml->addChild('identifier',$sampleRecord['identifier']['rid'])->addAttribute('type','RID');
+        }
+      
+        // EID
+        if($sampleRecord['identifier']['eid']){
+            $xml->addChild('identifier',$sampleRecord['identifier']['eid'])->addAttribute('type','EID');
+        }
+      
+        // PII
+        if($sampleRecord['identifier']['pii']){
+            $xml->addChild('identifier',$sampleRecord['identifier']['pii'])->addAttribute('type','PII');
+        }
      
+      // Build Related Item
+      
+        if($sampleRecord['relatedItem']['journal']){
+            $xml->addChild('relatedItem')->addAttribute('type','host');
+            $xml->relatedItem->addChild('titleInfo');
+            $xml->relatedItem->titleInfo->addChild('title',  htmlspecialchars($sampleRecord['relatedItem']['journal']));
+            
+            if($sampleRecord['relatedItem']['issn']){
+                $xml->relatedItem->addChild('identifier',$sampleRecord['relatedItem']['issn'])->addAttribute('type','ISSN');
+            }
+            
+            if($sampleRecord['relatedItem']['essn']){
+                $xml->relatedItem->addChild('identifier',$sampleRecord['relatedItem']['essn'])->addAttribute('type','ESSN');
+            }
+            
+            if($sampleRecord['relatedItem']['volume'] || $sampleRecord['relatedItem']['issue'] || $sampleRecord['relatedItem']['pages']){
+                $xml->relatedItem->addChild('part');
+                
+                if($sampleRecord['relatedItem']['volume']) {
+                    $volXML = $xml->relatedItem->part->addChild('detail');
+                    $volXML->addAttribute('type','volume');
+                    $volXML->addChild('number',  htmlspecialchars($sampleRecord['relatedItem']['volume']));
+                    $volXML->addChild('caption','vol.');
+                }
+                
+                if($sampleRecord['relatedItem']['issue']) {
+                    $issXML = $xml->relatedItem->part->addChild('detail');
+                    $issXML->addAttribute('type','issue');
+                    $issXML->addChild('number',  htmlspecialchars($sampleRecord['relatedItem']['issue']));
+                    $issXML->addChild('caption','iss.');
+                }
+                
+                if($sampleRecord['relatedItem']['pages']) {
+                    $pagXML = $xml->relatedItem->part->addChild('extent');
+                    $pagXML->addAttribute('unit','page');
+                    $page_array = explode("-",$sampleRecord['relatedItem']['pages']);
+                    $xml->relatedItem->part->extent->addChild('start',  htmlspecialchars($page_array[0]));
+                    $xml->relatedItem->part->extent->addChild('end',  htmlspecialchars($page_array[1]));
+                }
+            }   
+        }
+      
+      // Build Notes
+        
+        if($sampleRecord['note']['keywords']){
+            $xml->addChild('note', htmlspecialchars($sampleRecord['note']['keywords']))->addAttribute('displayLabel','Keywords');
+        }
+        
+        if($sampleRecord['note']['grants']){
+            $xml->addChild('note', htmlspecialchars($sampleRecord['note']['grants']))->addAttribute('displayLabel','Grant Number');
+        }
+      
+     // Build FLVC extensions
+        
+        $flvc = $xml->addChild('extension')->addChild('flvc:flvc', '', 'info:flvc/manifest/v1');
+        $flvc->addChild('flvc:owningInstitution', 'FSU');
+        $flvc->addChild('flvc:submittingInstitution', 'FSU');
+
+     // Add other static elements
+      $xml->addChild('typeOfResource', 'text');
+      $xml->addChild('genre', 'text')->addAttribute('authority', 'rdacontent');
+      $xml->addChild('language');
+      $l1 = $xml->language->addChild('languageTerm', 'English');
+      $l1->addAttribute('type', 'text');
+      $l2 = $xml->language->addChild('languageTerm', 'eng');
+      $l2->addAttribute('type', 'code');
+      $l2->addAttribute('authority', 'iso639-2b');
+      $xml->addChild('physicalDescription');
+      $rda_media = $xml->physicalDescription->addChild('form', 'computer');
+      $rda_media->addAttribute('authority', 'rdamedia'); 
+      $rda_media->addAttribute('type', 'RDA media terms');
+      $rda_carrier = $xml->physicalDescription->addChild('form', 'online resource');
+      $rda_carrier->addAttribute('authority', 'rdacarrier'); 
+      $rda_carrier->addAttribute('type', 'RDA carrier terms');
+      $xml->physicalDescription->addChild('extent', '1 online resource');
+      $xml->physicalDescription->addChild('digitalOrigin', 'born digital');
+      $xml->physicalDescription->addChild('internetMediaType', 'application/pdf');
+      $xml->addChild('recordInfo');
+      $xml->recordInfo->addChild('recordCreationDate', date('Y-m-d'))->addAttribute('encoding', 'w3cdtf');
+      $xml->recordInfo->addChild('descriptionStandard', 'rda');
+
+      
+//
+// WRITE MODS FILE
+//
+$handle = __DIR__ . "/{$sampleRecord['identifier']['iid']}.xml";
+$output = fopen($handle,"w");
+
+$dom = new DOMDocument('1.0');
+$dom->preserveWhiteSpace = false;
+$dom->formateOutput = true;
+$dom->loadXML($xml->asXML());
+fwrite($output,$dom->saveXML());
+fclose($output);
+
 
 // At some point, add interaction between the script and a file db of IDs to
 // skip already-ingested objects
