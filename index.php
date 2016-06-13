@@ -305,7 +305,8 @@ for($index = 0; $index < count($idListArray); $index++){
         $subTitleArray = explode(": ",$sortTitle);
             // now $subTitleArray[0] will be startTitle & [1] will be subTitle
             $startTitle = $subTitleArray[0];
-            $subTitle = $subTitleArray[1];
+            if($subTitleArray[1]){$subTitle = $subTitleArray[1];}
+            else {$subTitle = FALSE;}
     
         // Combine it all into one master title array to be parsed for MODS Record
         $parsedTitleArray = array("nonsort"=>$nonsort,"sort"=>$sortTitle,"start"=>$startTitle,"subtitle"=>$subTitle,"fulltitle"=>$articleTitle);
@@ -498,7 +499,7 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
       $xml->titleInfo->addAttribute('lang','eng');
       $xml->titleInfo->addChild('title', htmlspecialchars($sampleRecord['titleInfo']['start']));
       if ($sampleRecord['titleInfo']['nonsort']){ $xml->titleInfo->addChild('nonSort', htmlspecialchars($sampleRecord['titleInfo']['nonsort'])); }
-      if ($sampleRecord['titleInfo']['subtitle']){ $xml->titleInfo->addChild('subTitle', htmlspecialchars($sampleRecord['titleInfo']['subTitle'])); }
+      if ($sampleRecord['titleInfo']['subtitle']){ $xml->titleInfo->addChild('subTitle', htmlspecialchars($sampleRecord['titleInfo']['subtitle'])); }
       
       // Build Name
       foreach($sampleRecord['name'] as $value){
@@ -511,7 +512,7 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
           
           $a->addChild('namePart',htmlspecialchars($value['Lastname']))->addAttribute('type','family');
           
-          $a->addChild('affiliation',htmlspecialchars($value['Affiliation']));
+          if($value['Affiliation']){$a->addChild('affiliation',htmlspecialchars($value['Affiliation']));}
           
           $a->addChild('role');
           $r1 = $a->role->addChild('roleTerm', 'author'); 
