@@ -1,5 +1,5 @@
 <?php
-ini_set('max_execution_time', 300); // 5 minute execution time on script
+ini_set('max_execution_time', 600); // 10 minute execution time on script
 date_default_timezone_set('America/New_York');
 $sleepVar = 10; // seconds to sleep, use with sleep();
 
@@ -27,6 +27,73 @@ for ($i = 0; $i < $count; $i++){
     }
 }
 
+//
+// BUILD CHECK AGAINST DB OF IDS THAT HAVE ALREADY BEEN PROCESSED/ARE KNOWN EMBARGOED
+// AND REMOVE THOSE FROM IDLIST
+//
+// THE DATABASE FILE IS SQLITE
+   
+    /*
+CREATE TABLE embargo
+(uid INTEGER NOT NULL,
+"embargo-date" VARCHAR(10),
+"query-date" VARCHAR(10),
+"record-title" VARCHAR(255),
+PRIMARY KEY (uid))
+
+CREATE TABLE processed
+(uid INTEGER NOT NULL,
+"query-date" VARCHAR(10),
+"record-title" VARCHAR(255),
+PRIMARY KEY (uid))
+
+CREATE TABLE protected
+(uid INTEGER NOT NULL,
+"query-date" VARCHAR(10),
+"record-title" VARCHAR(255),
+PRIMARY KEY (uid))s
+ * 
+ */
+
+
+
+    $db_filename = __DIR__ . "/database.sqlite";
+    $db_handle = new SQLite3($db_filename);
+
+    
+    // Get processed UIDs
+    
+    $processQuery = "SELECT * FROM processed";
+    $processed_check = $db_handle->query($processQuery);
+    
+    $processArray = array();
+    $i=0;
+    while ($row = $processed_check->fetchArray()){
+        $processArray[$i] = $row['uid'];
+        $i++;
+    }
+    
+    // Get protected UIDs
+    
+    $protectQuery = "SELECT * FROM protected";
+    $protected_check = $db_handle->query($protectQuery);
+    
+    while ($row = $protected_check->fetchArray()){
+        $processArray[$i] = $row['uid'];
+        $i++;
+    }
+    
+    // Get embargo UIDs?  Or allow these in case they have expired...
+    
+    // purge idList
+    
+    $idListPurge = explode(",",$idList);
+    
+    $cleanArray = array_diff($idListPurge,$processArray);
+    
+    $idList = implode(",",$cleanArray);
+    
+ 
 sleep($sleepVar); // Give the server some time to rest
 
 // Construct eSummary request & decode the JSON
@@ -52,12 +119,11 @@ $eFetchXML = simplexml_load_file($eFetch) or die ("Problem with loading XML from
 $idListArray = explode(",",$idList);
 
 $recordsArray = array();
-for($index = 0; $index < (count($idListArray) - 1); $index++){
+for($index = 0; $index < count($idListArray); $index++){
     // This Loop will allow us to go through each record and pull out what we 
     // want and we can store each processed record as part of an array that gets 
     // checked against DB and processed into MODS XML format.
     
- //****   // Store in the array the PDF URL String?
     
 //    
 // VARIABLES FROM EFETCH. coming from XML stream:
@@ -204,6 +270,11 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
                     $articleIdArray["embargo"] = TRUE;
                     // Can add functionality to strip out the embargo date here
                     $articleIdArray["pdf"] = "embargoed";
+                    
+                    
+                    
+                    
+                    
                 } else {
                     $articleIdArray["embargo"] = FALSE;
                     $articleIdArray["pdf"] = "http://www.ncbi.nlm.nih.gov/pmc/articles/{$articleIdArray["pmc"]}/pdf/{$articleIdArray["mid"]}.pdf";
@@ -356,11 +427,68 @@ for($index = 0; $index < (count($idListArray) - 1); $index++){
     
 }
 
+// INSERT EMBARGO RECORD INTO DB AND PURGE FROM IDLIST SO MODS RECORD NOT 
+// CREATED
+
+$idListPurge = array();
+foreach($cleanArray as $val){
+    
+    if($recordsArray[$val]['identifier']['embargo'] == TRUE){
+        
+        $idListPurge[] = $val;
+        
+        $embargoString = $recordsArray[$val]['identifier']['pmcid'];
+        $embargoDate = substr($embargoString,59,10);
+        $dateCreated = $recordsArray[$val]['recordInfo']['dateCreated'];
+        $recordTitle = $recordsArray[$val]['titleInfo']['fulltitle'];
+        
+        $dbEmbargoQueryString = "INSERT OR REPLACE INTO embargo VALUES (:uid, :embargo, :querydate, :title)";
+        
+        $dbEmbargoQuery = $db_handle->prepare($dbEmbargoQueryString);
+        
+        $dbEmbargoQuery->bindValue(':uid', $val, SQLITE3_INTEGER);
+        $dbEmbargoQuery->bindValue(':embargo', $embargoDate, SQLITE3_TEXT);
+        $dbEmbargoQuery->bindValue(':querydate', $dateCreated, SQLITE3_TEXT);
+        $dbEmbargoQuery->bindValue(':title', $recordTitle, SQLITE3_TEXT);
+        
+       
+        $embargoResults = $dbEmbargoQuery->execute();
+    }
+
+// INSERT UNRETRIEVABLE RECORDS INTO DB AND PURGE FROM IDLIST
+    
+    if(empty($recordsArray[$val]['identifier']['pmcid'])){
+        
+        $dateCreated = $recordsArray[$val]['recordInfo']['dateCreated'];
+        $recordTitle = $recordsArray[$val]['titleInfo']['fulltitle'];
+        
+        $protString = "INSERT OR REPLACE INTO protected VALUES (:uid, :date, :title)";
+        $protQuery = $db_handle->prepare($protString);
+        
+       
+        $protQuery->bindValue(':uid', $val, SQLITE3_INTEGER);
+        $protQuery->bindValue(':date', $dateCreated, SQLITE3_TEXT);
+        $protQuery->bindValue(':title', $recordTitle, SQLITE3_TEXT);
+        
+        $protResults = $protQuery->execute();
+        
+        $idListPurge[] = $val;
+        
+    }
+    
+}
+
+// Create new ID array with IDs left for MODS processing
+
+$newIdArray = array_diff($cleanArray,$idListPurge);
+
+
+foreach($newIdArray as $modsRecord){
 //
-// GENERATE MODS RECORD
-// Starting with a Single UID, but build a loop for the rest
 //
-$sampleRecord = $recordsArray['22082216'];
+// GENERATE MODS RECORD FOR EACH UID REMAINING
+//
+$sampleRecord = $recordsArray[$modsRecord];
      
 $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mods="http://www.loc.gov/mods/v3" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:flvc="info:flvc/manifest/v1" xsi:schemaLocation="http://www.loc.gov/standards/mods/v3/mods-3-4.xsd" version="3.4"></mods>');
       
@@ -551,7 +679,7 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
 //
 // WRITE MODS FILE
 //
-$handle = __DIR__ . "/{$sampleRecord['identifier']['iid']}.xml";
+$handle = __DIR__ . "/output/{$sampleRecord['identifier']['iid']}.xml";
 $output = fopen($handle,"w");
 
 $dom = new DOMDocument('1.0');
@@ -561,9 +689,30 @@ $dom->loadXML($xml->asXML());
 fwrite($output,$dom->saveXML());
 fclose($output);
 
+//
+// ADD TO PROCESSED TABLE IN DB
+//
+$queryDate = date('Y-m-d');
+$recordTitle = $sampleRecord['titleInfo']['fulltitle'];
+$iid = $sampleRecord['identifier']['iid'];
 
-// At some point, add interaction between the script and a file db of IDs to
-// skip already-ingested objects
+
+$insertProc = "INSERT INTO processed VALUES (:uid, :querydate,  :title, :iid)";
+
+
+$insertProcQuery = $db_handle->prepare($insertProc);
+
+$insertProcQuery->bindValue(':uid', $modsRecord, SQLITE3_INTEGER);
+$insertProcQuery->bindValue(':querydate', $queryDate, SQLITE3_TEXT);
+$insertProcQuery->bindValue(':title', $recordTitle, SQLITE3_TEXT);
+$insertProcQuery->bindValue(':iid', $iid, SQLITE3_TEXT);
+$insertProcResults = $insertProcQuery->execute();
+
+print "Processed {$iid}! <a href=\"/pmc_grabber/output/{$iid}.xml\">View XML</a>";
+print "<br>";
+}
+
+
 
 //
 // DEV TEST
@@ -591,6 +740,9 @@ print "<h1>Results from eFetch XML Load</h1>";
 print "<pre>";
 print_r($eFetchXML);
 print "</pre>";
+
+
+
 /* DEV GRAVEYARD
  *****file get contents timeout****
  * $ctx = stream_context_create(array(
@@ -639,4 +791,6 @@ print "</pre>";
  * 
  * 
  */
+
+$db_handle = NULL;
 ?>

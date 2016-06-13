@@ -173,7 +173,10 @@ for ($i = 0; $i < (count($articleIdESum) - 1); $i++){
     }
     
 
-    
+    // how to get just the date out of the embargo string
+
+$embargoString = "pmc-id: PMC4746015;manuscript-id: NIHMS691239;embargo-date:2017/01/01;";
+$slice = substr($string,59,10);
 
 // Print out results to test variable chains
 
