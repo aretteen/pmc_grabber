@@ -491,7 +491,7 @@ foreach($newIdArray as $modsRecord){
 //
 $sampleRecord = $recordsArray[$modsRecord];
      
-$xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mods="http://www.loc.gov/mods/v3" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:flvc="info:flvc/manifest/v1" xsi:schemaLocation="http://www.loc.gov/standards/mods/v3/mods-3-4.xsd" version="3.4"></mods>');
+$xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mods="http://www.loc.gov/mods/v3" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:flvc="info:flvc/manifest/v1" xsi:schemaLocation="http://www.loc.gov/standards/mods/v3/" version="3.4"></mods>');
       
       // Build Title
       
@@ -539,31 +539,31 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
       // Build identifiers
       
         // IID
-        $xml->addChild('identifier',$sampleRecord['identifier']['iid'])->addAttribute('type','IID');
+        $xml->addChild('identifier',$sampleRecord['identifier']['iid'])->addAttribute('type','iid');
       
         // DOI
         if($sampleRecord['identifier']['doi']){
-            $xml->addChild('identifier',$sampleRecord['identifier']['doi'])->addAttribute('type','DOI');
+            $xml->addChild('identifier',$sampleRecord['identifier']['doi'])->addAttribute('type','doi');
         }
         
         // OMC
         if($sampleRecord['identifier']['pmc']){
-            $xml->addChild('identifier',$sampleRecord['identifier']['pmc'])->addAttribute('type','PMCID');
+            $xml->addChild('identifier',$sampleRecord['identifier']['pmc'])->addAttribute('type','pmcid');
         }
       
         // RID
         if($sampleRecord['identifier']['rid']){
-            $xml->addChild('identifier',$sampleRecord['identifier']['rid'])->addAttribute('type','RID');
+            $xml->addChild('identifier',$sampleRecord['identifier']['rid'])->addAttribute('type','rid');
         }
       
         // EID
         if($sampleRecord['identifier']['eid']){
-            $xml->addChild('identifier',$sampleRecord['identifier']['eid'])->addAttribute('type','EID');
+            $xml->addChild('identifier',$sampleRecord['identifier']['eid'])->addAttribute('type','eid');
         }
       
         // PII
         if($sampleRecord['identifier']['pii']){
-            $xml->addChild('identifier',$sampleRecord['identifier']['pii'])->addAttribute('type','PII');
+            $xml->addChild('identifier',$sampleRecord['identifier']['pii'])->addAttribute('type','pii');
         }
      
       // Build Related Item
@@ -574,11 +574,11 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
             $xml->relatedItem->titleInfo->addChild('title',  htmlspecialchars($sampleRecord['relatedItem']['journal']));
             
             if($sampleRecord['relatedItem']['issn']){
-                $xml->relatedItem->addChild('identifier',$sampleRecord['relatedItem']['issn'])->addAttribute('type','ISSN');
+                $xml->relatedItem->addChild('identifier',$sampleRecord['relatedItem']['issn'])->addAttribute('type','issn');
             }
             
             if($sampleRecord['relatedItem']['essn']){
-                $xml->relatedItem->addChild('identifier',$sampleRecord['relatedItem']['essn'])->addAttribute('type','ESSN');
+                $xml->relatedItem->addChild('identifier',$sampleRecord['relatedItem']['essn'])->addAttribute('type','essn');
             }
             
             if($sampleRecord['relatedItem']['volume'] || $sampleRecord['relatedItem']['issue'] || $sampleRecord['relatedItem']['pages']){
