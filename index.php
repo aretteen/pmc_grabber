@@ -207,9 +207,19 @@ for($index = 0; $index < count($idListArray); $index++){
             $lname = $authors->Author[$i]->LastName->__toString();
             $fullname = $fname . " " . $lname;
             $x = 0;
-            $authAffil = $authors->Author[$i]->AffiliationInfo->Affiliation."";
+            
+            // Author Affiliation string content varies across records
+            // To add a level of control, this piece will check to see if
+            // "Florida State University", "FSU", or "Florida Center for Reading Research"
+            // is incorporated, and if so only pass that string on to be included in the MODS record.
+            // Executive Decision made to abandon including this string because it is highly unregulated by PubMed
+            // and presents too many differences to programmatically parse properly.
+            
+            // $authAffil = $authors->Author[$i]->AffiliationInfo->Affiliation."";
+            
+            
 
-            $authorArray[$i] = array("Firstname"=>$fname,"Lastname"=>$lname,"Fullname"=>$fullname,"Affiliation"=>$authAffil);
+            $authorArray[$i] = array("Firstname"=>$fname,"Lastname"=>$lname,"Fullname"=>$fullname/*,"Affiliation"=>$authAffil*/);
         }
 
     // Grant Number Parsing
@@ -264,16 +274,12 @@ for($index = 0; $index < count($idListArray); $index++){
            if($idtype == "pmcid"){
                 // When a record has a PMCID, it means there is a manuscript.
                 // The manuscript can be emargoed or not. If embargoed, we need to flag that.
-                $needle = "embargo-date";
+            $needle = "embargo-date";
                 if(strpos($value,$needle)){
                     // if this returns true, then there is an embargo date
                     $articleIdArray["embargo"] = TRUE;
                     // Can add functionality to strip out the embargo date here
                     $articleIdArray["pdf"] = "embargoed";
-                    
-                    
-                    
-                    
                     
                 } else {
                     $articleIdArray["embargo"] = FALSE;
@@ -369,7 +375,7 @@ for($index = 0; $index < count($idListArray); $index++){
 
            if($mesh->MeshHeading[$i]->QualifierName){ // can be a single qualifier or a set of qualifers for the descriptor
                for($xi=0;$xi<count($mesh->MeshHeading[$i]->QualifierName); $xi++){
-                   $meshSubArray[$xi] = $descriptor . "--" . $mesh->MeshHeading[$i]->QualifierName[$xi].""; 
+                   $meshSubArray[$xi] = $descriptor . "/" . $mesh->MeshHeading[$i]->QualifierName[$xi].""; 
                    $meshArray[$i] = implode("||,||",$meshSubArray);
                }
             } else {
@@ -512,7 +518,7 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
           
           $a->addChild('namePart',htmlspecialchars($value['Lastname']))->addAttribute('type','family');
           
-          if($value['Affiliation']){$a->addChild('affiliation',htmlspecialchars($value['Affiliation']));}
+          // if($value['Affiliation']){$a->addChild('affiliation',htmlspecialchars($value['Affiliation']));}
           
           $a->addChild('role');
           $r1 = $a->role->addChild('roleTerm', 'author'); 
@@ -622,8 +628,6 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
                         $subXML->addAttribute('authority','mesh');
                         $subXML->addChild('topic',  htmlspecialchars($termsArray[$subIndex]));
                     }
-                    
-                    
                 } else {
                     // If above is not true, then there is only term per line
                     
