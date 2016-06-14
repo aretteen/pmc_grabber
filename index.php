@@ -83,7 +83,15 @@ PRIMARY KEY (uid))s
         $i++;
     }
     
-    // Get embargo UIDs?  Or allow these in case they have expired...
+    // Purge the embargo table of records if embargo date has passed
+    
+    $embargoQueryString = "DELETE FROM embargo WHERE embargo-date < :date";
+    $embargoQuery = $db_handle->prepare($embargoQueryString);
+    
+    $currdate = date("Y-m-d");
+    
+    $embargoQuery->bindValue(':date', $currDate, SQLITE3_TEXT);
+    $embargoQuery->execute();
     
     // purge idList
     
@@ -412,7 +420,7 @@ for($index = 0; $index < count($idListArray); $index++){
         $languageMODS = array("text"=>"English","code"=>"eng");
         $physicalDescriptionMODS = array("computer","online resource","1 online resource","born digital","application/pdf");
         $extensionMODS = array("owningInstitution"=>"FSU","submittingInstitution"=>"FSU");
-            $date = date("Y/m/d");
+            $date = date("Y-m-d");
         $recordInfoMODS = array("dateCreated"=>$date,"descriptionStandard"=>"rda");
       
    // pass processed stuff into here and it will be stored, keyed to the UID
@@ -489,6 +497,13 @@ foreach($cleanArray as $val){
 
 $newIdArray = array_diff($cleanArray,$idListPurge);
 
+
+if(empty($newIdArray)){
+    // This will stop MODS record creation if script has just run and there are
+    // no IDs to process that are new.
+    
+    print "There are no IDs that are left to process.  View <a href=\"/admin.php\">admin page</a> to manage processed items.";
+} else {
 
 foreach($newIdArray as $modsRecord){
 //
@@ -716,7 +731,7 @@ $insertProcResults = $insertProcQuery->execute();
 print "Processed {$iid}! <a href=\"/pmc_grabber/output/{$iid}.xml\">View XML</a>";
 print "<br>";
 }
-
+}
 
 
 //
