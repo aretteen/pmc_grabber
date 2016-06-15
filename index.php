@@ -1,5 +1,5 @@
 <?php
-ini_set('max_execution_time', 600); // 10 minute execution time on script
+ini_set('max_execution_time', 1800); // 30 minute execution time on script
 date_default_timezone_set('America/New_York');
 $sleepVar = 10; // seconds to sleep, use with sleep();
 
@@ -85,10 +85,10 @@ PRIMARY KEY (uid))s
     
     // Purge the embargo table of records if embargo date has passed
     
-    $embargoQueryString = "DELETE FROM embargo WHERE embargo-date < :date";
+    $embargoQueryString = 'DELETE FROM "embargo" WHERE "embargo-date" < ":date"';
     $embargoQuery = $db_handle->prepare($embargoQueryString);
     
-    $currdate = date("Y-m-d");
+    $currdate = date("Y/m/d");
     
     $embargoQuery->bindValue(':date', $currDate, SQLITE3_TEXT);
     $embargoQuery->execute();
@@ -665,6 +665,11 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
         if($sampleRecord['note']['grants']){
             $xml->addChild('note', htmlspecialchars($sampleRecord['note']['grants']))->addAttribute('displayLabel','Grant Number');
         }
+        
+        $PMCLocation = "http://www.ncbi.nlm.nih.gov/pmc/articles/{$sampleRecord['identifier']['pmc']}";
+        $pubNoteString = "This NIH-funded author manuscript originally appeared in PubMed Central at {$PMCLocation}.";
+        
+        $xml->addChild('note', $pubNoteString)->addAttribute('displayLabel','Publication Note');
       
      // Build FLVC extensions
         
@@ -708,6 +713,18 @@ $dom->formateOutput = true;
 $dom->loadXML($xml->asXML());
 fwrite($output,$dom->saveXML());
 fclose($output);
+
+//
+// GRAB PDF AND SAVE TO OUTPUT FOLDER
+//
+$pdfSleepVar = 10;
+sleep($pdfSleepVar); // sleeps for 3 seconds between grabs
+
+$PDF = file_get_contents($sampleRecord['identifier']['pdf']) or die("Could not get file");
+
+$fileNamePDF = __DIR__ . "/output/" . $sampleRecord['identifier']['iid'] . ".pdf";
+file_put_contents($fileNamePDF, $PDF);
+
 
 //
 // ADD TO PROCESSED TABLE IN DB
