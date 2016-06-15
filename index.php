@@ -3,7 +3,8 @@ ini_set('max_execution_time', 2400); // 40 minute execution time on script
 date_default_timezone_set('America/New_York');
 $sleepVar = 10; // seconds to sleep, use with sleep();
 
-// Construct a valid search that brings back results associated with
+// Construct a valid search that brings back matched results.
+// The following search encompasses:
 // the Grant # HD052120 and Affiliations: [Florida State University; FSU; 
 // Florida Center for Reading Research; FCRR]
 // The search will return a list of matching IDs; use those IDs to iterate 
@@ -15,7 +16,7 @@ $json_response = json_decode($response_search);
 
 $count = $json_response->esearchresult->count; // Number of results fetched
 
-// Create the ID List String to pass to eSummary
+// Create the ID List String to pass to eSummary (must be comma-separated with no spaces)
 // Store in:  $idList
 
 $idList = "";
@@ -31,35 +32,12 @@ for ($i = 0; $i < $count; $i++){
 // BUILD CHECK AGAINST DB OF IDS THAT HAVE ALREADY BEEN PROCESSED/ARE KNOWN EMBARGOED
 // AND REMOVE THOSE FROM IDLIST
 //
-// THE DATABASE FILE IS SQLITE
-   
-    /*
-CREATE TABLE embargo
-(uid INTEGER NOT NULL,
-"embargo-date" VARCHAR(10),
-"query-date" VARCHAR(10),
-"record-title" VARCHAR(255),
-PRIMARY KEY (uid))
-
-CREATE TABLE processed
-(uid INTEGER NOT NULL,
-"query-date" VARCHAR(10),
-"record-title" VARCHAR(255),
-PRIMARY KEY (uid))
-
-CREATE TABLE protected
-(uid INTEGER NOT NULL,
-"query-date" VARCHAR(10),
-"record-title" VARCHAR(255),
-PRIMARY KEY (uid))s
- * 
- */
-
-
 
     $db_filename = __DIR__ . "/database.sqlite";
     $db_handle = new SQLite3($db_filename);
 
+    // ADD CREATE TABLES IF NOT EXIST
+    
     
     // Get processed UIDs
     
@@ -88,12 +66,22 @@ PRIMARY KEY (uid))s
     $embargoQueryString = 'DELETE FROM "embargo" WHERE "embargo-date" < ":date"';
     $embargoQuery = $db_handle->prepare($embargoQueryString);
     
-    $currdate = date("Y/m/d");
+    $currDate = date("Y/m/d");
     
     $embargoQuery->bindValue(':date', $currDate, SQLITE3_TEXT);
     $embargoQuery->execute();
     
-    // purge idList
+    // Get remaining valid embargoed records
+    
+    $embargoQuerySelect = "SELECT * FROM embargo";
+    $embargoSelectCheck = $db_handle->query($embargoQuerySelect);
+    
+    while ($row = $embargoSelectCheck->fetchArray()){
+        $processArray[$i] = $row['uid'];
+        $i++;
+    }
+    
+    // purge idList, so that the only IDs that remain are valid to be processed
     
     $idListPurge = explode(",",$idList);
     
@@ -158,12 +146,11 @@ for($index = 0; $index < count($idListArray); $index++){
     $grants = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->GrantList; // returns an array with objects containing GrantID, Acronym, Agency, Country
     $keywords = $eFetchXML->PubmedArticle[$index]->MedlineCitation->KeywordList->Keyword; // returns an array which can be iterated for all keywords #woot
 //    $publicationType = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->PublicationTypeList->PublicationType; // may return an array? otherwise, just "JOURNAL ARTICLE"
-//    $affiliationSample = $eFetchXML->PubmedArticle[$index]->MedlineCitation->Article->AuthorList->Author[0]->AffiliationInfo->Affiliation; // just a sample, testing double array within object chain, gonna have to build into the author loop
        
     
     // PubmedData chain has variables too, but mostly redundant and incomplete 
     // compared to the JSON variable
-    $articleIds = $eFetchXML->PubmedArticle[$index]->PubmedData->ArticleIdList->ArticleId; // returns array of IDs keyed by number, so not helpful in extrapolating what the ID is. BUT, can iterate this and check for PMC####### and NIHMS###### rows
+ //   $articleIds = $eFetchXML->PubmedArticle[$index]->PubmedData->ArticleIdList->ArticleId; // returns array of IDs keyed by number, so not helpful in extrapolating what the ID is. BUT, can iterate this and check for PMC####### and NIHMS###### rows
 
     // Not all articles have it, but there are some with Mesh arrays (Medical Subject Headings)
     $mesh = $eFetchXML->PubmedArticle[$index]->MedlineCitation->MeshHeadingList; // returns array with objects for elements
@@ -224,9 +211,7 @@ for($index = 0; $index < count($idListArray); $index++){
             // and presents too many differences to programmatically parse properly.
             
             // $authAffil = $authors->Author[$i]->AffiliationInfo->Affiliation."";
-            
-            
-
+        
             $authorArray[$i] = array("Firstname"=>$fname,"Lastname"=>$lname,"Fullname"=>$fullname/*,"Affiliation"=>$authAffil*/);
         }
 
