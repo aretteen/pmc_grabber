@@ -1,5 +1,5 @@
 <?php
-ini_set('max_execution_time', 1800); // 30 minute execution time on script
+ini_set('max_execution_time', 2400); // 40 minute execution time on script
 date_default_timezone_set('America/New_York');
 $sleepVar = 10; // seconds to sleep, use with sleep();
 
