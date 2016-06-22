@@ -5,9 +5,9 @@ PMC_Grabber is a PHP-based utility to be used with the NIH PubMed API interfaces
 ## Using PMC_Grabber
 
 1. If this is the first time running the script, make sure the database.sql file is deleted from the directory.
-  *Also, edit index.php directly to change the search string to your desired search string. The string must be HTML-Encoded. You can use the Advance Search tool on PubMed to build a complex string of searches.
-  *Be aware of the maximum execution time of the script. The script builds in sleep time for each API call and PDF grabs. Allow 20 seconds + 10 seconds per record + 300 seconds to give 5 minutes extra time to be safe.
-  *Review the overview below to get an understanding of how to re-tool PMC_Grabber for use at your institution. You will want to change static elements in the MODS record at the very least.
+   *Also, edit index.php directly to change the search string to your desired search string. The string must be HTML-Encoded. You can use the Advance Search tool on PubMed to build a complex string of searches.
+   *Be aware of the maximum execution time of the script. The script builds in sleep time for each API call and PDF grabs. Allow 20 seconds + 10 seconds per record + 300 seconds to give 5 minutes extra time to be safe.
+   *Review the overview below to get an understanding of how to re-tool PMC_Grabber for use at your institution. You will want to change static elements in the MODS record at the very least.
 
 2. Launch index.php in a browser (or through the command line if you want finer control of stopping the script from running).
   *Development and testing of this script was done using a local webserver. If executing the script in a browser from a local webserver, you can stop the script by stopping the httpd service on your machine.
