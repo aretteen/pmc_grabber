@@ -45,7 +45,7 @@ PMC_Grabber is a PHP-based utility to be used with the NIH PubMed API interfaces
 
 4. eSummary & eFetch API calls
   * Once the ID list has been filtered to contain only the IDs that have not been processed, are not embargoed, and are not protected, the script passes the IDs to the eSearch and eFetch APIs
-  * **Note that these APIs support comma-separated strings of IDs. Using this method will reduce 200 separate API calls to ONE, drastically limiting the strain on the server.  Please program responsibly to ensure you are not putting undue strain you on the PubMed servers!**
+  * **Note that these APIs support comma-separated strings of IDs. Using this method will reduce 200 separate API calls to ONE, drastically limiting the strain on the server.  Please program responsibly to ensure you are not putting undue strain on the PubMed servers!**
   * PubMed notes that if more than about 200 UIDs are provided at once, the request should be made using the HTTP POST method.  This script has not been tested on a set of records larger than 200 yet.
   * For our purposes, calling both eSummary and eFetch was necessary to get at all of the relevant metadata we wanted to use in creating a MODS record.  To get a feel for which API returns what information, you should pick an ID and invoke the two APIs in two separate tabs on your browser. Keep in mind that eSummary will return JSON or XML (set through the retmode parameter), but eFetch will not return JSON and only XML (along with plain text). Thankfully, PHP can parse JSON and XML data structures with relative ease.
 
