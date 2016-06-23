@@ -3,6 +3,9 @@ ini_set('max_execution_time', 2400); // 40 minute execution time on script
 date_default_timezone_set('America/New_York');
 $sleepVar = 10; // seconds to sleep, use with sleep();
 
+
+// STILL NEED TO ADD CODE TO CREATE DB STRUCTURE IF DB FILE DOES NOT EXIST
+
 // Construct a valid search that brings back matched results.
 // The following search encompasses:
 // the Grant # HD052120 and Affiliations: [Florida State University; FSU; 
@@ -501,7 +504,7 @@ foreach($newIdArray as $modsRecord){
 //
 $sampleRecord = $recordsArray[$modsRecord];
      
-$xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mods="http://www.loc.gov/mods/v3" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:flvc="info:flvc/manifest/v1" xsi:schemaLocation="http://www.loc.gov/standards/mods/v3/ http://www.loc.gov/standards/mods/v3/mods-3-4.xsd" version="3.4"></mods>');
+$xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mods="http://www.loc.gov/mods/v3" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:etd="http://www.ndltd.org/standards/metadata/etdms/1.0/" xmlns:flvc="info:flvc/manifest/v1" xsi:schemaLocation="http://www.loc.gov/standards/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd" version="3.4"></mods>');
       
       // Build Title
       
@@ -549,31 +552,31 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
       // Build identifiers
       
         // IID
-        $xml->addChild('identifier',$sampleRecord['identifier']['iid'])->addAttribute('type','iid');
+        $xml->addChild('identifier',$sampleRecord['identifier']['iid'])->addAttribute('type','IID');
       
         // DOI
         if($sampleRecord['identifier']['doi']){
-            $xml->addChild('identifier',$sampleRecord['identifier']['doi'])->addAttribute('type','doi');
+            $xml->addChild('identifier',$sampleRecord['identifier']['doi'])->addAttribute('type','DOI');
         }
         
         // OMC
         if($sampleRecord['identifier']['pmc']){
-            $xml->addChild('identifier',$sampleRecord['identifier']['pmc'])->addAttribute('type','pmcid');
+            $xml->addChild('identifier',$sampleRecord['identifier']['pmc'])->addAttribute('type','PMCID');
         }
       
         // RID
         if($sampleRecord['identifier']['rid']){
-            $xml->addChild('identifier',$sampleRecord['identifier']['rid'])->addAttribute('type','rid');
+            $xml->addChild('identifier',$sampleRecord['identifier']['rid'])->addAttribute('type','RID');
         }
       
         // EID
         if($sampleRecord['identifier']['eid']){
-            $xml->addChild('identifier',$sampleRecord['identifier']['eid'])->addAttribute('type','eid');
+            $xml->addChild('identifier',$sampleRecord['identifier']['eid'])->addAttribute('type','EID');
         }
       
         // PII
         if($sampleRecord['identifier']['pii']){
-            $xml->addChild('identifier',$sampleRecord['identifier']['pii'])->addAttribute('type','pii');
+            $xml->addChild('identifier',$sampleRecord['identifier']['pii'])->addAttribute('type','PII');
         }
      
       // Build Related Item
@@ -706,6 +709,8 @@ fclose($output);
 //
 // GRAB PDF AND SAVE TO OUTPUT FOLDER
 //
+
+/*
 $pdfSleepVar = 10;
 sleep($pdfSleepVar); // sleeps for 3 seconds between grabs
 
@@ -713,7 +718,7 @@ $PDF = file_get_contents($sampleRecord['identifier']['pdf']) or die("Could not g
 
 $fileNamePDF = __DIR__ . "/output/" . $sampleRecord['identifier']['iid'] . ".pdf";
 file_put_contents($fileNamePDF, $PDF);
-
+*/
 
 //
 // ADD TO PROCESSED TABLE IN DB
@@ -742,7 +747,9 @@ print "<br>";
 
 //
 // DEV TEST
-//
+print "<br>";
+print "<hr>";
+print "<h1>Dev Test Area</h1>";
 print "<pre>";
 print_r($recordsArray);
 print "</pre>";
