@@ -91,7 +91,7 @@ PMC_Grabber is a PHP-based utility to be used with the NIH PubMed API interfaces
      3. Grant Numbers - Raw array is combined to create a comma-separated string.
      4. Keywords - Raw array is combined to create a comma-separated string.
      5. Article IDs - There are more IDs associated to an article than necessary for inclusion in a repository. In this step, we select the IDs we care about and store in the array, as well as create institutional ids (IID) for use in our repository system. This step also checks the article for embargo status and sets relevant variables depending on that check.
-     6. Article Title - Raw required parsing to more easily generate MODS compliant <title> fields, checking for Non Sort and SubTitle and storing relevant pieces of the title in variables for easy translation to MODS
+     6. Article Title - Raw required parsing to more easily generate MODS compliant "title" fields, checking for Non Sort and SubTitle and storing relevant pieces of the title in variables for easy translation to MODS
      7. Publication Date - PubMed does not store the date in W3CDTF form, so it must be parsed for it
      8. Pages - MODS requires a <start> and <end> value, which presents a problem for raw page ranges such as "235-45". I wrote a script to detect this form and fix abbreviated page ranges.
      9. Mesh Subject Terms - The raw data here is tricky to parse properly, especially since the MeSH subject strings do not really match the MODS <subject> hierarchy. We decided to combine Descriptor/Qualifier pairs into a single string for each pair. We plan to update this in the future to also check against the MeSH authority DTD file to produce a valueURI for the MODS record.
