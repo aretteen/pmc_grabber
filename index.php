@@ -4,12 +4,10 @@ date_default_timezone_set('America/New_York');
 $sleepVar = 10; // seconds to sleep, use with sleep();
 
 
-// STILL NEED TO ADD CODE TO CREATE DB STRUCTURE IF DB FILE DOES NOT EXIST
 
 // Construct a valid search that brings back matched results.
 // The following search encompasses:
-// the Grant # HD052120 and Affiliations: [Florida State University; FSU; 
-// Florida Center for Reading Research; FCRR]
+// the Grant # HD052120 
 // The search will return a list of matching IDs; use those IDs to iterate 
 // through another API call to get the specific info per article
 
@@ -41,10 +39,24 @@ for ($i = 0; $i < $count; $i++){
 //
 
     $db_filename = __DIR__ . "/database.sqlite";
-    $db_handle = new SQLite3($db_filename);
+    $db_handle = new SQLite3($db_filename) or die ("Could not open SQLite database");
 
     // ADD CREATE TABLES IF NOT EXIST
-    
+    try{
+        
+        // create embargo table if it doesn't exist
+        $embargoTable = 'CREATE TABLE IF NOT EXISTS embargo (uid INTEGER NOT NULL,"embargo-date" VARCHAR(10),"query-date" VARCHAR(10),"record-title" VARCHAR(255),PRIMARY KEY (uid))';
+        $processedTable = 'CREATE TABLE IF NOT EXISTS processed (uid INTEGER NOT NULL,"query-date" VARCHAR(10),"record-title" VARCHAR(255),"iid" VARCHAR(255),PRIMARY KEY (uid))';
+        $protectedTable = 'CREATE TABLE IF NOT EXISTS protected (uid INTEGER NOT NULL,"query-date" VARCHAR(10),"record-title" VARCHAR(255),PRIMARY KEY (uid))';
+        
+        $db_handle->exec($embargoTable);
+        $db_handle->exec($processedTable);
+        $db_handle->exec($protectedTable);
+        
+    } catch (PDOException $e) {
+        echo $e->getMessage();
+    }
+
     
     // Get processed UIDs
     
