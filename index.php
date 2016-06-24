@@ -3,7 +3,24 @@ ini_set('max_execution_time', 2400); // 40 minute execution time on script
 date_default_timezone_set('America/New_York');
 $sleepVar = 10; // seconds to sleep, use with sleep();
 
+// Introduction Layer that allows user to load page and then click a button
+// to start the process.
 
+if (!isset($_POST['submit'])){
+echo "<h2>PMC Grabber</h2>";
+echo "<p>This tool is used to create MODS records from a Pub Med Central Search.  Use of this tool is subject to the terms and conditions of the NIH and PubMed regarding their various APIs and use of their servers.</p>";
+echo "<br><br>";
+echo "<a href=\"admin.php\">View the admin page</a> to see what PMC Grabber has already processed.";
+echo "<br><br>";
+echo "<h2>Required Information Before Running Utility</h2>";
+
+echo "<p>Before running the utility, make sure to edit <b>index.php</b> and update the <b>combined_search</b> variable to reflect your Tool, Email, and Search Term.";
+echo "<br><p>See the <a href=\"http://www.ncbi.nlm.nih.gov/books/NBK25499/#_chapter4_General_Usage_Guidelines_\" target=\"_blank\">General Usage Guidelines provided by the NIH for more information</p>";
+
+echo "<form action=\"index.php\" method=\"POST\">";
+echo "<br><br><input type=\"submit\" name=\"submit\" value=\"Run Script!\">";
+echo "</form>";
+} else {
 
 // Construct a valid search that brings back matched results.
 // The following search encompasses:
@@ -786,7 +803,7 @@ print "<pre>";
 print_r($eFetchXML);
 print "</pre>";
 
-
+}
 
 /* DEV GRAVEYARD
  *****file get contents timeout****
