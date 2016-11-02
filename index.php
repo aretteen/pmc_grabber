@@ -15,7 +15,7 @@ echo "<br><br>";
 echo "<h2>Required Information Before Running Utility</h2>";
 
 echo "<p>Before running the utility, make sure to edit <b>index.php</b> and update the <b>combined_search</b> variable to reflect your Tool, Email, and Search Term.";
-echo "<br><p>See the <a href=\"http://www.ncbi.nlm.nih.gov/books/NBK25499/#_chapter4_General_Usage_Guidelines_\" target=\"_blank\">General Usage Guidelines provided by the NIH for more information</p>";
+echo "<br><p>See the <a href=\"https://www.ncbi.nlm.nih.gov/books/NBK25499/#_chapter4_General_Usage_Guidelines_\" target=\"_blank\">General Usage Guidelines provided by the NIH for more information</p>";
 
 echo "<form action=\"index.php\" method=\"POST\">";
 echo "<br><br><input type=\"submit\" name=\"submit\" value=\"Run Script!\">";
@@ -28,11 +28,11 @@ echo "</form>";
 // The search will return a list of matching IDs; use those IDs to iterate 
 // through another API call to get the specific info per article
 
-// original combined search - $combined_search = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=(HD052120%5BGrant+Number%5D+AND+FCRR%5BAffiliation%5D)+OR+(HD052120%5BGrant+Number%5D+AND+(Florida+Center+for+Reading+Research%5BAffiliation%5D))+OR+(HD052120%5BGrant+Number%5D+AND+FSU%5BAffiliation%5D)+OR+(HD052120%5BGrant+Number%5D+AND+(Florida+State+University%5BAffiliation%5D))";
+// original combined search - $combined_search = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=(HD052120%5BGrant+Number%5D+AND+FCRR%5BAffiliation%5D)+OR+(HD052120%5BGrant+Number%5D+AND+(Florida+Center+for+Reading+Research%5BAffiliation%5D))+OR+(HD052120%5BGrant+Number%5D+AND+FSU%5BAffiliation%5D)+OR+(HD052120%5BGrant+Number%5D+AND+(Florida+State+University%5BAffiliation%5D))";
 
 // not all affiliation strings are accurately entered in PubMed, so just execute the Grant Search and use master list to filter the ones we want to ingest into our IR
 
-$combined_search = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=HD052120%5BGrant+Number%5D";
+$combined_search = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=HD052120%5BGrant+Number%5D";
 $response_search = file_get_contents($combined_search) or die("Problem with eSearch");
 $json_response = json_decode($response_search);
 
@@ -129,7 +129,7 @@ for ($i = 0; $i < $count; $i++){
 sleep($sleepVar); // Give the server some time to rest
 
 // Construct eSummary request & decode the JSON
-$eSum = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id={$idList}";
+$eSum = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id={$idList}";
 $eSumResponse = file_get_contents($eSum) or die("Problem with eSummary");
 $json_eSum = json_decode($eSumResponse);
 
@@ -137,7 +137,7 @@ sleep($sleepVar); // Sleep time between server calls
 
 // Construct eFetch request and store in XML variable
 // eFetch does not support returning JSON unfortunately
-$eFetch = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&id={$idList}";
+$eFetch = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&id={$idList}";
 $eFetchXML = simplexml_load_file($eFetch) or die ("Problem with loading XML from eFetch");
 
 // IMPORTANT TO REALIZE AT THIS POINT
@@ -312,7 +312,7 @@ for($index = 0; $index < count($idListArray); $index++){
                     
                 } else {
                     $articleIdArray["embargo"] = FALSE;
-                    $articleIdArray["pdf"] = "http://www.ncbi.nlm.nih.gov/pmc/articles/{$articleIdArray["pmc"]}/pdf/{$articleIdArray["mid"]}.pdf";
+                    $articleIdArray["pdf"] = "https://www.ncbi.nlm.nih.gov/pmc/articles/{$articleIdArray["pmc"]}/pdf/{$articleIdArray["mid"]}.pdf";
                 }
             }
         }
@@ -687,7 +687,7 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
             $xml->addChild('note', htmlspecialchars($sampleRecord['note']['grants']))->addAttribute('displayLabel','Grant Number');
         }
         
-        $PMCLocation = "http://www.ncbi.nlm.nih.gov/pmc/articles/{$sampleRecord['identifier']['pmc']}";
+        $PMCLocation = "https://www.ncbi.nlm.nih.gov/pmc/articles/{$sampleRecord['identifier']['pmc']}";
         $pubNoteString = "This NIH-funded author manuscript originally appeared in PubMed Central at {$PMCLocation}.";
         
         $xml->addChild('note', $pubNoteString)->addAttribute('displayLabel','Publication Note');
@@ -818,17 +818,17 @@ print "</pre>";
  * 
  * ****Code to use to grab the PDF from the server*****
 
-$pathPDF = "http://www.ncbi.nlm.nih.gov/pmc/articles/PMC4750400/pdf/nihms723722.pdf";
+$pathPDF = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4750400/pdf/nihms723722.pdf";
 
 $PDF = file_get_contents($pathPDF) or die("Could not get file");
 
 file_put_contents("test.pdf", $PDF);
  * 
  **** SEARCH STRINGS BROKEN UP ****
-$search_FCRR = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=(((HD052120%5BGrant%20Number%5D)%20AND%20FCRR%5BAffiliation%5D))"; // Grant Number & "FCRR"
-$search_FCRR_long = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=((HD052120%5BGrant+Number%5D)%20AND%20Florida+Center+for+Reading+Research%5BAffiliation%5D)"; // Grant Number & "Florida Center for Reading Research"
-$search_FSU_long= "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=((HD052120%5BGrant%20Number%5D)%20AND%20Florida%20State%20University%5BAffiliation%5D)"; // Grant Number & "Florida State University"
-$search_FSU = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=((HD052120%5BGrant+Number%5D)%20AND%20Florida+State+University%5BAffiliation%5D)"; // Grant Number & "FSU"
+$search_FCRR = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=(((HD052120%5BGrant%20Number%5D)%20AND%20FCRR%5BAffiliation%5D))"; // Grant Number & "FCRR"
+$search_FCRR_long = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=((HD052120%5BGrant+Number%5D)%20AND%20Florida+Center+for+Reading+Research%5BAffiliation%5D)"; // Grant Number & "Florida Center for Reading Research"
+$search_FSU_long= "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=((HD052120%5BGrant%20Number%5D)%20AND%20Florida%20State%20University%5BAffiliation%5D)"; // Grant Number & "Florida State University"
+$search_FSU = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=((HD052120%5BGrant+Number%5D)%20AND%20Florida+State+University%5BAffiliation%5D)"; // Grant Number & "FSU"
 
 
 *****************
