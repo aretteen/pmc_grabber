@@ -101,12 +101,13 @@ for ($i = 0; $i < $count; $i++){
     // --add the `term` SQL field
     // Purge the embargo table of records if embargo date has passed
     
-    $embargoQueryString = 'DELETE FROM "embargo" WHERE "embargo-date" < ":date"';
+    $embargoQueryString = 'DELETE FROM "embargo" WHERE ("embargo-date" < ":date") AND (term=":term")';
     $embargoQuery = $db_handle->prepare($embargoQueryString);
     
     $currDate = date("Y/m/d");
     
     $embargoQuery->bindValue(':date', $currDate, SQLITE3_TEXT);
+    $embargoQuery->bindValue(':term', $search_term, SQLITE3_TEXT);
     $embargoQuery->execute();
     
     // Get remaining valid embargoed records
