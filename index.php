@@ -62,9 +62,9 @@ for ($i = 0; $i < $count; $i++){
     try{
         
         // create embargo table if it doesn't exist
-        $embargoTable = 'CREATE TABLE IF NOT EXISTS embargo (uid INTEGER NOT NULL,"embargo-date" VARCHAR(10),"query-date" VARCHAR(10),"record-title" VARCHAR(255),PRIMARY KEY (uid))';
-        $processedTable = 'CREATE TABLE IF NOT EXISTS processed (uid INTEGER NOT NULL,"query-date" VARCHAR(10),"record-title" VARCHAR(255),"iid" VARCHAR(255),PRIMARY KEY (uid))';
-        $protectedTable = 'CREATE TABLE IF NOT EXISTS protected (uid INTEGER NOT NULL,"query-date" VARCHAR(10),"record-title" VARCHAR(255),PRIMARY KEY (uid))';
+        $embargoTable = 'CREATE TABLE IF NOT EXISTS embargo (uid INTEGER NOT NULL, "embargo-date" VARCHAR(10), "query-date" VARCHAR(10), "record-title" VARCHAR(255), \'term\' TEXT, PRIMARY KEY (uid))';
+        $processedTable = 'CREATE TABLE IF NOT EXISTS processed (uid INTEGER NOT NULL, "query-date" VARCHAR(10), "record-title" VARCHAR(255), iid VARCHAR(255), \'term\' TEXT, PRIMARY KEY (uid))';
+        $protectedTable = 'CREATE TABLE IF NOT EXISTS protected (uid INTEGER NOT NULL, "query-date" VARCHAR(10), "record-title" VARCHAR(255), \'term\' TEXT, PRIMARY KEY (uid))';
         
         $db_handle->exec($embargoTable);
         $db_handle->exec($processedTable);
