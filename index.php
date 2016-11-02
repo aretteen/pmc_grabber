@@ -31,8 +31,8 @@ echo "</form>";
 // original combined search - $combined_search = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=(HD052120%5BGrant+Number%5D+AND+FCRR%5BAffiliation%5D)+OR+(HD052120%5BGrant+Number%5D+AND+(Florida+Center+for+Reading+Research%5BAffiliation%5D))+OR+(HD052120%5BGrant+Number%5D+AND+FSU%5BAffiliation%5D)+OR+(HD052120%5BGrant+Number%5D+AND+(Florida+State+University%5BAffiliation%5D))";
 
 // not all affiliation strings are accurately entered in PubMed, so just execute the Grant Search and use master list to filter the ones we want to ingest into our IR
-
-$combined_search = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term=HD052120%5BGrant+Number%5D";
+$search_term = "HD052120[Grant Number]";
+$combined_search = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=1000&tool=FSU_IR&email=aretteen@fsu.edu&term={$search_term}";
 $response_search = file_get_contents($combined_search) or die("Problem with eSearch");
 $json_response = json_decode($response_search);
 
@@ -97,6 +97,8 @@ for ($i = 0; $i < $count; $i++){
         $i++;
     }
     
+    // VERSION 2 CRITICAL UPDATE: Need new workflow for handling embargo deletion
+    // --add the `term` SQL field
     // Purge the embargo table of records if embargo date has passed
     
     $embargoQueryString = 'DELETE FROM "embargo" WHERE "embargo-date" < ":date"';
@@ -478,7 +480,7 @@ foreach($cleanArray as $val){
         $dateCreated = $recordsArray[$val]['recordInfo']['dateCreated'];
         $recordTitle = $recordsArray[$val]['titleInfo']['fulltitle'];
         
-        $dbEmbargoQueryString = "INSERT OR REPLACE INTO embargo VALUES (:uid, :embargo, :querydate, :title)";
+        $dbEmbargoQueryString = "INSERT OR REPLACE INTO embargo VALUES (:uid, :embargo, :querydate, :title, :term)";
         
         $dbEmbargoQuery = $db_handle->prepare($dbEmbargoQueryString);
         
@@ -486,6 +488,7 @@ foreach($cleanArray as $val){
         $dbEmbargoQuery->bindValue(':embargo', $embargoDate, SQLITE3_TEXT);
         $dbEmbargoQuery->bindValue(':querydate', $dateCreated, SQLITE3_TEXT);
         $dbEmbargoQuery->bindValue(':title', $recordTitle, SQLITE3_TEXT);
+        $dbEmbargoQuery->bindValue(':term', $search_term, SQLITE3_TEXT);
         
        
         $embargoResults = $dbEmbargoQuery->execute();
@@ -498,13 +501,14 @@ foreach($cleanArray as $val){
         $dateCreated = $recordsArray[$val]['recordInfo']['dateCreated'];
         $recordTitle = $recordsArray[$val]['titleInfo']['fulltitle'];
         
-        $protString = "INSERT OR REPLACE INTO protected VALUES (:uid, :date, :title)";
+        $protString = "INSERT OR REPLACE INTO protected VALUES (:uid, :date, :title, :term)";
         $protQuery = $db_handle->prepare($protString);
         
        
         $protQuery->bindValue(':uid', $val, SQLITE3_INTEGER);
         $protQuery->bindValue(':date', $dateCreated, SQLITE3_TEXT);
         $protQuery->bindValue(':title', $recordTitle, SQLITE3_TEXT);
+        $protQuery->bindValue(':term', $search_term, SQLITE3_TEXT);
         
         $protResults = $protQuery->execute();
         
@@ -757,7 +761,7 @@ $recordTitle = $sampleRecord['titleInfo']['fulltitle'];
 $iid = $sampleRecord['identifier']['iid'];
 
 
-$insertProc = "INSERT INTO processed VALUES (:uid, :querydate,  :title, :iid)";
+$insertProc = "INSERT INTO processed VALUES (:uid, :querydate,  :title, :iid, :term)";
 
 
 $insertProcQuery = $db_handle->prepare($insertProc);
@@ -766,6 +770,7 @@ $insertProcQuery->bindValue(':uid', $modsRecord, SQLITE3_INTEGER);
 $insertProcQuery->bindValue(':querydate', $queryDate, SQLITE3_TEXT);
 $insertProcQuery->bindValue(':title', $recordTitle, SQLITE3_TEXT);
 $insertProcQuery->bindValue(':iid', $iid, SQLITE3_TEXT);
+$insertProcQuery->bindValue(':term', $search_term, SQLITE3_TEXT);
 $insertProcResults = $insertProcQuery->execute();
 
 print "Processed {$iid}! <a href=\"/pmc_grabber/output/{$iid}.xml\">View XML</a>";
