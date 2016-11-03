@@ -715,7 +715,7 @@ $xml = new SimpleXMLElement('<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi=
 //
 // WRITE MODS FILE
 //
-$handle = __DIR__ . "/output/{$sampleRecord['identifier']['iid']}.xml";
+$handle = __DIR__ . "/output/{$search_namespace}/{$sampleRecord['identifier']['iid']}.xml";
 $output = fopen($handle,"w");
 
 $dom = new DOMDocument('1.0');
@@ -735,7 +735,7 @@ sleep($pdfSleepVar); // sleeps for 3 seconds between grabs
 
 $PDF = file_get_contents($sampleRecord['identifier']['pdf']) or die("Could not get file");
 
-$fileNamePDF = __DIR__ . "/output/" . $sampleRecord['identifier']['iid'] . ".pdf";
+$fileNamePDF = __DIR__ . "/output/{$search_namespace}/" . $sampleRecord['identifier']['iid'] . ".pdf";
 file_put_contents($fileNamePDF, $PDF);
 */
 
