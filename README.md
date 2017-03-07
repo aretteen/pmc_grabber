@@ -6,7 +6,7 @@ PMC_Grabber is a PHP-based utility to be used with the NIH PubMed API interfaces
 
 1. If this is the first time running the script, make sure the database.sql file is deleted from the directory.
   * Also, edit index.php directly to change the search string to your desired search string. The string must be HTML-Encoded. You can use the [Advance Search tool on PubMed](http://www.ncbi.nlm.nih.gov/pubmed/advanced) to build a complex string of searches.
-  * Be aware of the maximum execution time of the script. The script builds in sleep time for each API call ~~and PDF grabs~~. Allow 20 seconds + 10 seconds per record + 300 seconds to give 5 minutes extra time to be safe.
+  * Be aware of the maximum execution time of the script. The script builds in sleep time for each API call and PDF grabs. Allow 20 seconds + 10 seconds per record + 300 seconds to give 5 minutes extra time to be safe.
   * Review the overview below to get an understanding of how to re-tool PMC_Grabber for use at your institution. You will want to change static elements in the MODS record at the very least. Becomming familiar with the structure of PubMed's data output through eSummary and eFetch is highly recommended.
 
 2. Launch index.php in a browser (or through the command line if you want finer control of stopping the script from running).
@@ -16,10 +16,14 @@ PMC_Grabber is a PHP-based utility to be used with the NIH PubMed API interfaces
   * Control of what IDs get processed is done through querying the local database.
   * The default password is **pmc_admin**.
 
-4. Review the MODS records and ingest ~~PDFs~~ into your repository.
+4. Review the MODS records and ingest PDFs into your repository.
 
 5. The script is built to be run multiple times over a period of time.  You can run the script at any point again in the future; you should coordinate any subsequent runs with the embargo table in PHPLiteAdmin to ensure the capture and processing of new MODS records.
   * Aside from picking up expired embargo dates, the script will also pick up any new articles added to the PubMed database satisfying the original search criteria. Most new articles will have some embargo on them, usually for a year.
+
+### A Note About PubMed's Restriction on Systematic Downloading of Articles
+
+For anyone wishing to utilize PMC Grabber's feature that downloads the manuscript PDF of a specific article identified by PMC Grabber, please be aware of PubMed's stated [restrictions on systematic downloading of articles](https://www.ncbi.nlm.nih.gov/pmc/about/copyright). Based on my reading of this policy, I believe that using PMC Grabber to retrieve the PDFs is not prohibited. PMC Grabber does not crawl the manuscript database and is not a completely automated process; the workflow requires identifying a qualifying sub-set of articles, processes downloads 1 at a time with forced pauses between each download, and is supported by our institution being granted permission by the authors to upload their PMC article manuscript into the institutional repository. The script accesses the PDF copies through the public-facing URL and basically accomplishes what a person would normally be able to do manually, but in a more efficient way. Throughout my documentation, I stress the importance of users to implement courtesy in their efforts to harvest metadata and articles through an API so as to not overload servers or otherwise negatively impact the availability of the service for others. So far I have not received any complaints from PubMed after using PMC Grabber multiple times, but I remain open to updating the code upon request.
 
 ## Overview of Script Process
 
@@ -38,7 +42,7 @@ PMC_Grabber is a PHP-based utility to be used with the NIH PubMed API interfaces
   * This script utilizes SQLite3 to manage the records processed by the script. The table structure by default is:
      1. embargo - for records with an embargo date noted in the metadata. These records will not be processed until the embargo date has passed and an author manuscript is publicly available.
      2. protected - for records that do not have an embargo date or an author manuscript ID. The full-text article associated with these records are locked behind a publisher paywall, and therefor these records will not be processed at all.
-     3. processed - for records that have an author manuscript ID and are not under embargo. The script will generate XML MODS Records Files for each record~~, as well as pull the public-facing PDF copy of the record. **Note: Make sure you or your institution has proper permissions from the authors whose manuscripts you are pulling.**~~
+     3. processed - for records that have an author manuscript ID and are not under embargo. The script will generate XML MODS Records Files for each record, as well as pull the public-facing PDF copy of the record. **Note: Make sure you or your institution has proper permissions from the authors whose manuscripts you are pulling.**
   * The logical narrative behind the database infrastructure is to check against the stored IDs in "embargo", "protected", and "processed" tables and exclude those IDs from being processed into MODS records. Every time the script is run, it will purge the "embargo" table of all records with an expired embargo-date (based on the date the script is run).
   * The SQLite database is stored locally as "database.sqlite". The script will create this database and empty tables upon loading if the database file does not exist, **so when starting fresh, make sure to delete any existing database.sqlite file in the directory.**
   * Administrators can access the PHPLiteAdmin tool by launching the "admin.php" file.  The default password is **pmc_admin**, which can be changed by editing the admin.php file with a text editor.
