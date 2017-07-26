@@ -1,6 +1,6 @@
 # pmc_grabber
 
-PMC_Grabber is a PHP-based utility to be used with the NIH PubMed API interfaces. It pulls metadata from the eSummary and eFetch APIs and converts the metadata into valid MODS records.
+PMC_Grabber is a PHP-based utility to be used with the NIH PubMed API interfaces. It pulls metadata from the eSummary and eFetch APIs and converts the metadata into valid MODS records. See a demo of the tool here: https://youtu.be/12FpWZeXQPA
 
 ## Using PMC_Grabber
 
